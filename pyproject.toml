@@ -1,0 +1,17 @@
+[project]
+name = "etiquetacion_argumentacion_textos_infantiles"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "arq>=0.25.0",
+    "asyncpg>=0.30.0",
+    "crudadmin[redis]>=0.4.3",
+    "fastapi-tailwind>=2.0.4a1",
+    "fastapi[standard]>=0.121.1",
+    "fastcrud===0.18.1",
+    "itsdangerous>=2.2.0",
+    "jinja2>=3.1.6",
+    "markdown>=3.10",
+]
