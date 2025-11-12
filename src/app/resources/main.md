@@ -1,0 +1,9 @@
+---
+title: Principal
+---
+
+# Conectividad
+
+Descripción
+
+...

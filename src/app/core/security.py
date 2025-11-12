@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any, Literal
+#from typing import Any, Literal, cast
 
 import bcrypt
 from fastapi.security import OAuth2PasswordBearer
@@ -45,6 +46,7 @@ async def authenticate_user(username_or_email: str, password: str, db: AsyncSess
     if not db_user:
         return False
 
+#    db_user = cast(dict[str, Any], db_user)
     if not await verify_password(password, db_user["hashed_password"]):
         return False
 

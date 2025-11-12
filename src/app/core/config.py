@@ -27,8 +27,7 @@ class CryptSettings(BaseSettings):
 
 
 class DatabaseSettings(BaseSettings):
-    pass
-
+    MEILI_MASTER_KEY: str = config("MEILI_MASTER_KEY", default="")
 
 class SQLiteSettings(DatabaseSettings):
     SQLITE_URI: str = config("SQLITE_URI", default="./sql_app.db")
@@ -123,6 +122,9 @@ class EnvironmentOption(Enum):
     PRODUCTION = "production"
 
 
+class CORSSettings(BaseSettings):
+    BACKEND_CORS_ORIGINS: list[str] = config("BACKEND_CORS_ORIGINS", cast=lambda v: [s.strip() for s in v.split(',')], default="")
+
 class EnvironmentSettings(BaseSettings):
     ENVIRONMENT: EnvironmentOption = config("ENVIRONMENT", default=EnvironmentOption.LOCAL)
 
@@ -141,6 +143,7 @@ class Settings(
     DefaultRateLimitSettings,
     CRUDAdminSettings,
     EnvironmentSettings,
+    CORSSettings,
 ):
     pass
 

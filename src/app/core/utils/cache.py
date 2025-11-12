@@ -182,7 +182,6 @@ async def _delete_keys_by_pattern(pattern: str) -> None:
         if cursor == 0:
             break
 
-
 def cache(
     key_prefix: str,
     resource_id_name: Any = None,

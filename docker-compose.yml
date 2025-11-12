@@ -1,24 +1,24 @@
 services:
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    # -------- replace with comment to run with gunicorn --------
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    # command: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
-    env_file:
-      - ./src/.env
-    # -------- replace with comment if you are using nginx --------
-    ports:
-      - "8000:8000"
-    # expose:
-    #   - "8000"
-    depends_on:
-      - db
-      - redis
-    volumes:
-      - ./src/app:/code/app
-      - ./src/.env:/code/.env
+#  web:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    # -------- replace with comment to run with gunicorn --------
+#    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+#    # command: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+#    env_file:
+#      - ./src/.env
+#    # -------- replace with comment if you are using nginx --------
+#    ports:
+#      - "8000:8000"
+#    # expose:
+#    #   - "8000"
+#    depends_on:
+#      - db
+#      - redis
+#    volumes:
+#      - ./src/app:/code/app
+#      - ./src/.env:/code/.env
 
   worker:
     build:
@@ -41,17 +41,25 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     # -------- replace with comment to run migrations with docker --------
-    expose:
-      - "5432"
-    # ports:
-    #  - 5432:5432
+    ports:
+      - "5432:5432"
 
   redis:
     image: redis:alpine
     volumes:
       - redis-data:/data
-    expose:
-      - "6379"
+    ports:
+      - "6379:6379"
+
+  meilisearch:
+    image: 'getmeili/meilisearch:v1.16'
+    env_file:
+      - ./src/.env
+    ports: 
+      - "7700:7700"
+    volumes:
+      - meili-data:/data
+
 
   #-------- uncomment to run with pgadmin --------
   # pgadmin:
@@ -108,4 +116,5 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  meili-data:
   #pgadmin-data:

@@ -10,6 +10,13 @@ from arq.connections import RedisSettings
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware import Middleware
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+
+from fastapi_tailwind import tailwind
 
 from ..api.dependencies import get_current_superuser
 from ..core.utils.rate_limit import rate_limiter
@@ -24,6 +31,7 @@ from .config import (
     RedisCacheSettings,
     RedisQueueSettings,
     RedisRateLimiterSettings,
+    CORSSettings,
     settings,
 )
 from .db.database import Base
@@ -73,6 +81,7 @@ async def set_threadpool_tokens(number_of_tokens: int = 100) -> None:
     limiter = anyio.to_thread.current_default_thread_limiter()
     limiter.total_tokens = number_of_tokens
 
+static_files = StaticFiles(directory="src/app/static")
 
 def lifespan_factory(
     settings: (
@@ -110,6 +119,11 @@ def lifespan_factory(
             if create_tables_on_start:
                 await create_tables()
 
+            process = tailwind.compile(
+                static_files.directory + "/output.css",
+                tailwind_stylesheet_path = "./src/app/resources/input.css"
+            )
+
             initialization_complete.set()
 
             yield
@@ -123,6 +137,8 @@ def lifespan_factory(
 
             if isinstance(settings, RedisRateLimiterSettings):
                 await close_redis_rate_limit_pool()
+            if process:
+                process.terminate()
 
     return lifespan
 
@@ -130,6 +146,8 @@ def lifespan_factory(
 # -------------- application --------------
 def create_application(
     router: APIRouter,
+    front_router: APIRouter,
+    api_router: APIRouter,
     settings: (
         DatabaseSettings
         | RedisCacheSettings
@@ -138,6 +156,7 @@ def create_application(
         | RedisQueueSettings
         | RedisRateLimiterSettings
         | EnvironmentSettings
+        | CORSSettings
     ),
     create_tables_on_start: bool = True,
     lifespan: Callable[[FastAPI], _AsyncGeneratorContextManager[Any]] | None = None,
@@ -151,6 +170,12 @@ def create_application(
     Parameters
     ----------
     router : APIRouter
+        The APIRouter object containing the routes to be included in the FastAPI application.
+
+    front_router : FrontRouter
+        The FrontRouter object containing the routes to be included in the webapp application.
+
+    api_router : APIRouter
         The APIRouter object containing the routes to be included in the FastAPI application.
 
     settings
@@ -202,6 +227,23 @@ def create_application(
 
     application = FastAPI(lifespan=lifespan, **kwargs)
     application.include_router(router)
+    application.include_router(front_router)
+    application.include_router(api_router)
+
+    application.mount("/static", static_files, name="static")
+
+    if isinstance(settings, CORSSettings):
+        print(settings.BACKEND_CORS_ORIGINS)
+        if settings.BACKEND_CORS_ORIGINS:
+            application.add_middleware(
+                CORSMiddleware,
+                allow_origins=[
+                    str(origin).strip("/") for origin in settings.BACKEND_CORS_ORIGINS
+                ],
+                allow_credentials=True,
+                allow_methods=["*"],
+                allow_headers=["*"],
+            )
 
     if isinstance(settings, ClientSideCacheSettings):
         application.add_middleware(ClientCacheMiddleware, max_age=settings.CLIENT_CACHE_MAX_AGE)
