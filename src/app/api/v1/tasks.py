@@ -34,8 +34,9 @@ async def create_task(message: str) -> dict[str, str]:
     return {"id": job.job_id}
 
 
+@router.get("/task")
 @router.get("/task/{task_id}")
-async def get_task(task_id: str) -> dict[str, Any] | None:
+async def get_task(task_id: str = "") -> dict[str, Any] | None:
     """Get information about a specific background task.
 
     Parameters
@@ -56,4 +57,4 @@ async def get_task(task_id: str) -> dict[str, Any] | None:
     if job_info is None:
         return None
 
-    return job_info.__dict__
+    return {'info':job_info.__dict__, 'status':str(await job.status())}

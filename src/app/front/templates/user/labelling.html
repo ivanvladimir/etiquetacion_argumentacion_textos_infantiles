@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}Etiquetar un texto{% endblock %}
+
+{% block restricted_content %}
+<div class="max-w-4xl mx-auto" x-data="textHandler()"
+    x-init="$watch('taskId', value => {
+       if (value) {
+         htmx.ajax('GET', `{{ url_for('get_task') }}/${value}`, '#statusResult');
+         htmx.trigger('#statusChecker', 'checkStatus');
+       }
+     })"
+
+  >
+  <!-- Header -->
+  <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+      <h1 class="text-4xl font-bold text-gray-800 mb-2">Analiza un texto</h1>
+      <p class="text-gray-600">Sube un archivo, arrastralo o pegalo</p>
+  </div>
+
+  <!-- Input Methods -->
+  <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+      <div class="space-y-6">
+          <!-- File Upload Button -->
+          <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Sube archivo desde tu equipo</label>
+              <input 
+                  type="file" 
+                  accept=".txt,text/plain"
+                  @change="handleFiles($event.target.files)"
+                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:cursor-pointer cursor-pointer"
+              >
+          </div>
+
+          <!-- Drag & Drop Zone -->
+          <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Arrastra y soltar</label>
+              <div 
+                  @drop.prevent="handleDrop"
+                  @dragover.prevent="isDragging = true"
+                  @dragleave.prevent="isDragging = false"
+                  :class="isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 bg-gray-50'"
+                  class="border-4 border-dashed rounded-xl p-12 text-center transition-all duration-200"
+              >
+                  <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                  </svg>
+                  <p class="text-lg font-medium text-gray-700">Suelta tu texto aquí</p>
+                  <p class="text-sm text-gray-500 mt-1">Arhivos tipo: .txt o .docx</p>
+              </div>
+          </div>
+
+          <!-- Paste Area -->
+          <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">O pega el texto aquí</label>
+              <textarea 
+                  x-model="text"
+                  @paste="handlePaste"
+                  placeholder="Pega tu texto aquí con botón derecho y copiar, o con las teclas Ctrl+V / Cmd+V..."
+                  class="w-full h-32 px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"
+              ></textarea>
+              <div class="grid grid-cols-2 gap-4">
+              <div role="alert" class="alert ">
+                  <span x-text="`Caracteres: ${text.length}`" ></span>
+                  <span x-text="`Palabras: ${text.split(/\s+/).filter(w => w.length > 0).length}`"></span>
+              </div>
+              <button 
+                      @click="clearText"
+                      class="px-4 py-2 bg-yellow-200 text-black rounded-lg hover:bg-red-600 transition-colors font-medium"
+                  >
+                      Clear
+              </button>
+              </div>
+
+              <button
+                x-show="!isAnalyzing"
+                @click="startAnalysis"
+                class="mt-3 w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
+              >
+                Comenzar análisis
+              </button>
+          </div>
+      </div>
+
+  <!-- Analysis Status -->
+  <div x-show="isAnalyzing" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div id="statusResult"></div>
+
+        <div
+            id="statusChecker"
+            :hx-get='`{{url_for("get_task")}}/${taskId}`'
+            hx-trigger="checkStatus, every 2s"
+            hx-target="#statusResult"
+          hx-swap="innerHTML"
+          style="display: none;"
+        ></div>
+  </div>
+
+  <!-- Hidden form for HTMX -->
+  <form 
+      id="analysisForm"
+        hx-post="{{url_for('analyze_text')}}")
+        hx-trigger="submit"
+        @htmx:after-request="
+            const response = JSON.parse($event.detail.xhr.response);
+            startPolling(response.id);
+        "
+        @htmx:response-error="isAnalyzing = false; analysisStatus = 'El análisis falló, intenar de nuevo.'"
+        style="display: none;"
+    >
+        <input type="hidden" name="text" :value="text">
+        <input type="hidden" name="filename" :value="fileName">
+  </form>
+
+  <div id="analysisResult" class="mb-4"></div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+function textHandler() {
+  return {
+      text: '',
+      isDragging: false,
+      fileName: '',
+      isAnalyzing: false,
+      taskId: null,
+      analysisStatus: '',
+      pollingInterval: null,
+      
+      handleFiles(files) {
+          if (files.length === 0) return;
+          const file = files[0];
+          
+          if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.txt')) {
+              this.fileName = file.name;
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                  this.text = e.target.result;
+                  this.startAnalysis();
+              };
+              reader.readAsText(file);
+          } else {
+              alert('Subir un archivo de texto (.txt) o word (.docx)');
+          }
+      },
+      
+      handleDrop(e) {
+          this.isDragging = false;
+          this.handleFiles(e.dataTransfer.files);
+      },
+      
+      handlePaste(e) {
+          const pastedText = e.clipboardData.getData('text');
+          if (pastedText) {
+              this.text = pastedText;
+              this.fileName = 'Pega el texto aquí';
+          }
+      },
+      
+      startAnalysis() {
+          this.isAnalyzing = true;
+          this.analysisStatus = 'Comenzando el análisis';
+          
+          // Trigger HTMX request
+          const form = document.getElementById('analysisForm');
+          htmx.trigger(form, 'submit');
+      },
+
+      startPolling(taskId) {
+          this.taskId = taskId;
+          this.analysisStatus = 'Processing...';
+          
+          // Start polling for status
+          const statusChecker = document.getElementById('statusChecker');
+          statusChecker.setAttribute('hx-get', '{{url_for("get_task")}}/'+taskId);
+          htmx.process(statusChecker);
+          htmx.trigger(statusChecker, 'checkStatus');
+      },
+      
+      stopPolling() {
+          this.isAnalyzing = false;
+      },
+      
+      clearText() {
+          this.text = '';
+          this.fileName = '';
+          this.isAnalyzing = false;
+          this.taskId = null;
+          this.analysisStatus = '';
+          if (this.pollingInterval) {
+              clearInterval(this.pollingInterval);
+              this.pollingInterval = null;
+          }
+      }
+      
+  }
+}
+</script>
+{% endblock %}
