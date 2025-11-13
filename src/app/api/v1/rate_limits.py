@@ -1,7 +1,7 @@
 from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends, Request
-from fastcrud.paginated import PaginatedListResponse, compute_offset, paginated_response
+#from fastcrud.paginated import PaginatedListResponse, compute_offset, paginated_response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...api.dependencies import get_current_superuser
@@ -41,7 +41,7 @@ async def write_rate_limit(
     return cast(RateLimitRead, rate_limit_read)
 
 
-@router.get("/tier/{tier_name}/rate_limits", response_model=PaginatedListResponse[RateLimitRead])
+@router.get("/tier/{tier_name}/rate_limits")#, response_model=PaginatedListResponse[RateLimitRead])
 async def read_rate_limits(
     request: Request,
     tier_name: str,

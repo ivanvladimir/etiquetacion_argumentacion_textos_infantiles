@@ -1,7 +1,7 @@
 from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends, Request
-from fastcrud.paginated import PaginatedListResponse, compute_offset, paginated_response
+#from fastcrud.paginated import PaginatedListResponse, compute_offset, paginated_response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...api.dependencies import get_current_superuser, get_current_user
@@ -43,7 +43,7 @@ async def write_user(
     return cast(UserRead, user_read)
 
 
-@router.get("/users", response_model=PaginatedListResponse[UserRead])
+@router.get("/users")#, response_model=PaginatedListResponse[UserRead])
 async def read_users(
     request: Request, db: Annotated[AsyncSession, Depends(async_get_db)], page: int = 1, items_per_page: int = 10
 ) -> dict:

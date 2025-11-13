@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.config import settings
 from ...core.db.database import async_get_db
+from ...api.dependencies import get_current_superuser, get_current_user
 from ...core.exceptions.http_exceptions import UnauthorizedException
 from ...core.schemas import Token
 from ...core.security import (

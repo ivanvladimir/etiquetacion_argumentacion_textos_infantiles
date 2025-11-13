@@ -1,7 +1,7 @@
 from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends, Request
-from fastcrud.paginated import PaginatedListResponse, compute_offset, paginated_response
+#from fastcrud.paginated import PaginatedListResponse, compute_offset, paginated_response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...api.dependencies import get_current_superuser
@@ -32,7 +32,7 @@ async def write_tier(
     return cast(TierRead, tier_read)
 
 
-@router.get("/tiers", response_model=PaginatedListResponse[TierRead])
+@router.get("/tiers")#, response_model=PaginatedListResponse[TierRead])
 async def read_tiers(
     request: Request, db: Annotated[AsyncSession, Depends(async_get_db)], page: int = 1, items_per_page: int = 10
 ) -> dict:

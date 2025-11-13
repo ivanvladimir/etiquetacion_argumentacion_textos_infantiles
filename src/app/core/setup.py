@@ -145,7 +145,6 @@ def lifespan_factory(
 
 # -------------- application --------------
 def create_application(
-    router: APIRouter,
     front_router: APIRouter,
     api_router: APIRouter,
     settings: (
@@ -169,9 +168,6 @@ def create_application(
 
     Parameters
     ----------
-    router : APIRouter
-        The APIRouter object containing the routes to be included in the FastAPI application.
-
     front_router : FrontRouter
         The FrontRouter object containing the routes to be included in the webapp application.
 
@@ -226,7 +222,6 @@ def create_application(
         lifespan = lifespan_factory(settings, create_tables_on_start=create_tables_on_start)
 
     application = FastAPI(lifespan=lifespan, **kwargs)
-    application.include_router(router)
     application.include_router(front_router)
     application.include_router(api_router)
 
