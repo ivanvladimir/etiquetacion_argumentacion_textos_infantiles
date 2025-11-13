@@ -3,10 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{% block title %}{% endblock %} 🕸️ Conectividad </title>
+  <title>{% block title %}{% endblock %} ✍️ AATI </title>
 
   <link rel="stylesheet" href="{{ url_for('static', path='output.css') }}" />
-  <script defer src="https://friconix.com/cdn/friconix.js"> </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.0/dist/cdn.min.js"></script>
   {% block extra_links %}{% endblock %}
 
@@ -33,9 +32,9 @@ window.APP_CONFIG = {
 <!-- Navbar that hides on small screens (hidden sm:flex) -->
 <div class="navbar bg-base-100 shadow-lg hidden sm:flex">
     <div class="navbar-start">
-      <a class="btn btn-ghost text-xl">Conectividad</a>
+      <a class="btn btn-ghost text-xl">✍️ AATI</a>
       <ul class="menu menu-horizontal px-1">
-            {% for page,label in [('main','Principal')] %}
+            {% for page,label in [('main','Principal'),('labelling','Etiquetar textos')] %}
             <li><a {%if active_page == page%}class="menu-active"{%endif%} href="{{url_for(page)}}">{{label}}</a></li>
             {% endfor %}
       </ul>
@@ -88,7 +87,7 @@ window.APP_CONFIG = {
         </div>
     </div>
     <div class="navbar-center">
-        <a class="btn btn-ghost text-xl">Conectividad</a>
+        <a class="btn btn-ghost text-xl">✍️ AATI</a>
     </div>
     <div class="navbar-end">
         <button class="btn btn-ghost btn-circle">

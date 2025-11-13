@@ -2,7 +2,7 @@
 title: Principal
 ---
 
-# Conectividad
+# Análisis de argumentos de textos infantiles (AATI)
 
 Descripción
 
