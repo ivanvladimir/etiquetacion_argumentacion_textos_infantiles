@@ -31,10 +31,10 @@ async def analyze_text(
     if queue.pool is None:
         raise HTTPException(status_code=503, detail="No exíste cola de trabajos")
 
-    job = await queue.pool.enqueue_job("sample_background_task", "Aquí haciendo algo")
+    job = await queue.pool.enqueue_job("sample_background_task", filename)
     if job is None:
         raise HTTPException(status_code=500, detail="Failed to create task")
 
     return {
-        "id": job.job_id,
+        "id": job.job_id
     }

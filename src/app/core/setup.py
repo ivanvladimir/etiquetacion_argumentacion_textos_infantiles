@@ -105,6 +105,7 @@ def lifespan_factory(
         app.state.initialization_complete = initialization_complete
 
         await set_threadpool_tokens()
+        process = None
 
         try:
             if isinstance(settings, RedisCacheSettings):

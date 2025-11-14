@@ -3,15 +3,7 @@
 {% block title %}Etiquetar un texto{% endblock %}
 
 {% block restricted_content %}
-<div class="max-w-4xl mx-auto" x-data="textHandler()"
-    x-init="$watch('taskId', value => {
-       if (value) {
-         htmx.ajax('GET', `{{ url_for('get_task') }}/${value}`, '#statusResult');
-         htmx.trigger('#statusChecker', 'checkStatus');
-       }
-     })"
-
-  >
+<div class="max-w-4xl mx-auto" x-data="textHandler()">
   <!-- Header -->
   <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
       <h1 class="text-4xl font-bold text-gray-800 mb-2">Analiza un texto</h1>
@@ -73,7 +65,7 @@
               </div>
 
               <button
-                x-show="!isAnalyzing"
+                :class="!isAnalyzing ? true: false"
                 @click="startAnalysis"
                 class="mt-3 w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
               >
@@ -88,7 +80,7 @@
 
         <div
             id="statusChecker"
-            :hx-get='`{{url_for("get_task")}}/${taskId}`'
+            :hx-get='`{{url_for("task_status")}}/${taskId}`'
             hx-trigger="checkStatus, every 2s"
             hx-target="#statusResult"
           hx-swap="innerHTML"
@@ -99,11 +91,11 @@
   <!-- Hidden form for HTMX -->
   <form 
       id="analysisForm"
-        hx-post="{{url_for('analyze_text')}}")
+        hx-post="{{url_for('analyze_text')}}"
         hx-trigger="submit"
         @htmx:after-request="
             const response = JSON.parse($event.detail.xhr.response);
-            startPolling(response.id);
+            startPolling(response);
         "
         @htmx:response-error="isAnalyzing = false; analysisStatus = 'El análisis falló, intenar de nuevo.'"
         style="display: none;"
@@ -163,19 +155,20 @@ function textHandler() {
       startAnalysis() {
           this.isAnalyzing = true;
           this.analysisStatus = 'Comenzando el análisis';
+          this.fileName = "entrada de texto: "+this.text.replace(/[\r\n]+/g, ' ').slice(0, 20);
           
           // Trigger HTMX request
           const form = document.getElementById('analysisForm');
           htmx.trigger(form, 'submit');
       },
 
-      startPolling(taskId) {
-          this.taskId = taskId;
+      startPolling(info) {
+          this.taskId = info.id;
           this.analysisStatus = 'Processing...';
           
           // Start polling for status
           const statusChecker = document.getElementById('statusChecker');
-          statusChecker.setAttribute('hx-get', '{{url_for("get_task")}}/'+taskId);
+          statusChecker.setAttribute('hx-get', '{{url_for("task_status")}}/'+this.taskId);
           htmx.process(statusChecker);
           htmx.trigger(statusChecker, 'checkStatus');
       },

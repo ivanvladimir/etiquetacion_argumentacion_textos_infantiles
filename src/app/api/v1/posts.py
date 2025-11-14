@@ -1,7 +1,7 @@
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request
-from fastcrud import PaginatedListResponse, compute_offset, paginated_response
+#from fastcrud import PaginatedListResponse, compute_offset, paginated_response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...api.dependencies import get_current_superuser, get_current_user
@@ -47,7 +47,7 @@ async def write_post(
     return post_read
 
 
-@router.get("/{username}/posts", response_model=PaginatedListResponse[PostRead])
+@router.get("/{username}/posts", response_model=PostRead)
 @cache(
     key_prefix="{username}_posts:page_{page}:items_per_page:{items_per_page}",
     resource_id_name="username",

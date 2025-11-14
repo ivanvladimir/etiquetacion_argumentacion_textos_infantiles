@@ -1,17 +1,20 @@
 from typing import Any
 
 from arq.jobs import Job as ArqJob
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from ...api.dependencies import rate_limiter_dependency
 from ...core.utils import queue
 from ...schemas.job import Job
 
+templates = Jinja2Templates(directory="src/app/api/v1/templates")
+
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
-
 @router.post("/task", response_model=Job, status_code=201, dependencies=[Depends(rate_limiter_dependency)])
-async def create_task(message: str) -> dict[str, str]:
+async def create_task(filename: str) -> dict[str, str]:
     """Create a new background task.
 
     Parameters
@@ -27,7 +30,7 @@ async def create_task(message: str) -> dict[str, str]:
     if queue.pool is None:
         raise HTTPException(status_code=503, detail="Queue is not available")
 
-    job = await queue.pool.enqueue_job("sample_background_task", message)
+    job = await queue.pool.enqueue_job("sample_background_task", filename)
     if job is None:
         raise HTTPException(status_code=500, detail="Failed to create task")
 
@@ -36,7 +39,9 @@ async def create_task(message: str) -> dict[str, str]:
 
 @router.get("/task")
 @router.get("/task/{task_id}")
-async def get_task(task_id: str = "") -> dict[str, Any] | None:
+async def task_status(
+    request: Request,
+    task_id: str = "") -> HTMLResponse:
     """Get information about a specific background task.
 
     Parameters
@@ -57,4 +62,12 @@ async def get_task(task_id: str = "") -> dict[str, Any] | None:
     if job_info is None:
         return None
 
-    return {'info':job_info.__dict__, 'status':str(await job.status())}
+    response = templates.TemplateResponse(
+        request=request,
+        name="task_status.html",
+        context={
+            'info':job_info.__dict__, 
+            'status':str(await job.status())
+        },
+    )
+    return response
