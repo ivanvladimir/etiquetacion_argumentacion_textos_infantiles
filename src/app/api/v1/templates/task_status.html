@@ -1,8 +1,8 @@
 {% set status2tag = ({
-    'JobStatus.queued':'<div aria-label="info" class="status status-info"></div>',
-    'JobStatus.in_progress':'<div aria-label="wargint" class="status status-warning"></div>',
-    'JobStatus.complete':'<div aria-label="success" class="status status-success"></div>',
-    'JobStatus.not_found':'<div aria-label="warning" class="status status-warning"></div>',
+    'JobStatus.queued':'<div id="status_result" aria-label="info" class="status status-info analysis-continues"></div>',
+    'JobStatus.in_progress':'<div id="status_result" aria-label="wargint" class="status status-warning analysis-in-progress"></div>',
+    'JobStatus.complete':'<div id="status_result" aria-label="success" class="status status-success analysis-complete"></div>',
+    'JobStatus.not_found':'<div id="status_result" aria-label="warning" class="status status-warning analysis-failed"></div>',
 }) %}
 {% set status2label = {
     'JobStatus.queued':'por ejecutarse',
@@ -16,7 +16,7 @@
     {{ status2tag[status] | safe }}
   </div>La tarea {{info['args'][0]}} está {{ status2label[status]}}.
   <div>
-    <a x-show="isAnalyzing" rolr="button" class="btn btn-sm btn-primary">Ver estado de tarea</a>
-    <a x-show="!isAnalyzing" rolr="button" class="btn btn-sm btn-success">Resultado</a>
+    <a x-show="isAnalyzing" role="button" class="btn btn-sm btn-primary">Ver estado de tarea</a>
+    <a x-show="!isAnalyzing" role="button" class="btn btn-sm btn-success">Resultado</a>
   </div>
 </div>

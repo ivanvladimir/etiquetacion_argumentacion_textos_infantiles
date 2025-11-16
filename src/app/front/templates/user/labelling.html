@@ -3,7 +3,7 @@
 {% block title %}Etiquetar un texto{% endblock %}
 
 {% block restricted_content %}
-<div class="max-w-4xl mx-auto" x-data="textHandler()">
+<div class="max-w-4xl mx-auto" x-data="textHandler()" x-init="window.textHandlerInstance = $data">
   <!-- Header -->
   <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
       <h1 class="text-4xl font-bold text-gray-800 mb-2">Analiza un texto</h1>
@@ -60,52 +60,52 @@
                       @click="clearText"
                       class="px-4 py-2 bg-yellow-200 text-black rounded-lg hover:bg-red-600 transition-colors font-medium"
                   >
-                      Clear
+                      Borrar texto
               </button>
               </div>
 
               <button
-                :class="!isAnalyzing ? true: false"
-                @click="startAnalysis"
-                class="mt-3 w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
+                  :disabled="isAnalyzing || taskId"
+                  @click="startAnalysis"
+                  class="mt-3 w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
               >
-                Comenzar análisis
+                  <span x-show="!isAnalyzing">Comenzar análisis</span>
+                  <span x-show="isAnalyzing">Analizando...</span>
               </button>
           </div>
       </div>
 
-  <!-- Analysis Status -->
-  <div x-show="isAnalyzing" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div id="statusResult"></div>
-
-        <div
-            id="statusChecker"
-            :hx-get='`{{url_for("task_status")}}/${taskId}`'
-            hx-trigger="checkStatus, every 2s"
-            hx-target="#statusResult"
-          hx-swap="innerHTML"
+      <!-- Hidden form for HTMX -->
+      <form 
+          id="analysisForm"
+          hx-post="{{url_for('analyze_text')}}"
+          hx-trigger="submit"
+          hx-vals="js:{text: window.textHandlerInstance.text, filename: window.textHandlerInstance.fileName}"
+          @htmx:after-request="handleFormResponse($event)"
+          @htmx:response-error="handleError($event)"
           style="display: none;"
-        ></div>
-  </div>
+      >
+          <input type="hidden" name="text" :value="text">
+          <input type="hidden" name="filename" :value="fileName">
+      </form>
+      
+      <!-- Analysis Result - Target for status polling -->
+      <div 
+          id="analysisResult" 
+          class="mb-4"
+          @htmx:after-swap.window="checkCompletion($event)"
+      ></div 
+     
 
-  <!-- Hidden form for HTMX -->
-  <form 
-      id="analysisForm"
-        hx-post="{{url_for('analyze_text')}}"
-        hx-trigger="submit"
-        @htmx:after-request="
-            const response = JSON.parse($event.detail.xhr.response);
-            startPolling(response);
-        "
-        @htmx:response-error="isAnalyzing = false; analysisStatus = 'El análisis falló, intenar de nuevo.'"
-        style="display: none;"
-    >
-        <input type="hidden" name="text" :value="text">
-        <input type="hidden" name="filename" :value="fileName">
-  </form>
-
-  <div id="analysisResult" class="mb-4"></div>
-
+      <!-- Clear Results Button -->
+      <div x-show="!isAnalyzing && taskId !== null" class="mb-4">
+          <button 
+              @click="resetAnalysis"
+              class="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+          >
+              Limpiar resultados y comenzar nuevo análisis
+          </button>
+      </div>
   </div>
 </div>
 {% endblock %}
@@ -151,44 +151,143 @@ function textHandler() {
               this.fileName = 'Pega el texto aquí';
           }
       },
+
+      clearText() {
+            this.text = '';
+            this.fileName = '';
+      },
       
       startAnalysis() {
-          this.isAnalyzing = true;
-          this.analysisStatus = 'Comenzando el análisis';
-          this.fileName = "entrada de texto: "+this.text.replace(/[\r\n]+/g, ' ').slice(0, 20);
-          
-          // Trigger HTMX request
-          const form = document.getElementById('analysisForm');
-          htmx.trigger(form, 'submit');
+        if (this.text.trim().length === 0) {
+            alert('Por favor ingresa un texto para analizar');
+            return;
+        }
+        
+        this.isAnalyzing = true;
+        this.taskId = null;
+        
+        // Clear the result div
+        document.getElementById('analysisResult').innerHTML = '';
+        
+        console.log('Submitting analysis with text length:', this.text.length);
+        console.log('Filename:', this.fileName);
+        
+        // Trigger HTMX form submission
+        const form = document.getElementById('analysisForm');
+        htmx.trigger(form, 'submit');
       },
 
-      startPolling(info) {
-          this.taskId = info.id;
-          this.analysisStatus = 'Processing...';
+      handleFormResponse(event) {
+        try {
+            const response = JSON.parse(event.detail.xhr.response);
+            if (response.id) {
+                this.taskId = response.id;
+                // Start polling after receiving task_id
+                this.startPolling();
+            } else {
+                this.isAnalyzing = false;
+                alert('Error: No se recibió el ID de la tarea');
+            }
+        } catch (error) {
+            console.error('Error parsing response:', error);
+            this.isAnalyzing = false;
+            alert('Error al iniciar el análisis');
+        }
+      },
+
+      startPolling() {
+          // Clear any existing polling interval
+          if (this.pollingInterval) {
+              clearInterval(this.pollingInterval);
+          }
           
-          // Start polling for status
-          const statusChecker = document.getElementById('statusChecker');
-          statusChecker.setAttribute('hx-get', '{{url_for("task_status")}}/'+this.taskId);
-          htmx.process(statusChecker);
-          htmx.trigger(statusChecker, 'checkStatus');
+          // Make sure taskId exists
+          if (!this.taskId) {
+              console.error('No task ID available');
+              this.isAnalyzing = false;
+              return;
+          }
+          
+          console.log('Starting polling for task:', this.taskId);
+          
+          // Function to check status
+          const checkStatus = () => {
+              const statusUrl = `{{url_for('task_status')}}/${this.taskId}`;
+              console.log('Checking status at:', statusUrl);
+              
+              fetch(statusUrl)
+                  .then(response => response.text())
+                  .then(html => {
+                      // Update the result div
+                      document.getElementById('analysisResult').innerHTML = html;
+                      
+                      // Check if task is complete
+                      this.checkCompletion();
+                  })
+                  .catch(error => {
+                      console.error('Error checking status:', error);
+                      this.stopPolling();
+                      this.isAnalyzing = false;
+                  });
+          };
+          
+          // Start polling every 2 seconds
+          this.pollingInterval = setInterval(checkStatus, 2000);
+          
+          // Trigger initial check immediately
+          checkStatus();
       },
       
+      checkCompletion(event) {
+          // Check the HTML content for completion indicators
+          const resultDiv = document.getElementById('analysisResult');
+          
+          if (!resultDiv) return;
+          
+          console.log('Checking completion...');
+          
+          // Check for data attributes or classes indicating completion
+          if (resultDiv.querySelector('[data-status="completed"]') || 
+              resultDiv.querySelector('[data-status="failed"]') ||
+              resultDiv.querySelector('.analysis-complete') || 
+              resultDiv.querySelector('.analysis-failed')) {
+              
+              console.log('Analysis complete, stopping polling');
+              this.stopPolling();
+              this.isAnalyzing = false;
+          }
+      },
+
       stopPolling() {
-          this.isAnalyzing = false;
-      },
-      
-      clearText() {
-          this.text = '';
-          this.fileName = '';
-          this.isAnalyzing = false;
-          this.taskId = null;
-          this.analysisStatus = '';
           if (this.pollingInterval) {
               clearInterval(this.pollingInterval);
               this.pollingInterval = null;
           }
-      }
+      },
       
+      handleError(event) {
+          this.isAnalyzing = false;
+          this.stopPolling();
+          alert('El análisis falló, intentar de nuevo.');
+      },     
+
+      resetAnalysis() {
+          // Stop any ongoing polling
+          this.stopPolling();
+          
+          // Clear all state
+          this.isAnalyzing = false;
+          this.taskId = null;
+          
+          // Clear the result div
+          document.getElementById('analysisResult').innerHTML = '';
+          
+          // Optionally clear the text as well
+          this.text = '';
+          this.fileName = '';
+          
+          console.log('Analysis reset, ready for new task');
+      },
   }
 }
 </script>

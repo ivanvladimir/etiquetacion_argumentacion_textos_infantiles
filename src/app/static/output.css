@@ -9,14 +9,14 @@
     monospace;
     --color-red-600: oklch(57.7% 0.245 27.325);
     --color-yellow-200: oklch(94.5% 0.129 101.54);
-    --color-blue-50: oklch(97% 0.014 254.604);
-    --color-blue-200: oklch(88.2% 0.059 254.128);
     --color-indigo-50: oklch(96.2% 0.018 272.314);
     --color-indigo-100: oklch(93% 0.034 272.788);
     --color-indigo-200: oklch(87% 0.065 274.039);
     --color-indigo-500: oklch(58.5% 0.233 277.117);
     --color-indigo-600: oklch(51.1% 0.262 276.966);
     --color-indigo-700: oklch(45.7% 0.24 277.023);
+    --color-purple-600: oklch(55.8% 0.288 302.321);
+    --color-purple-700: oklch(49.6% 0.265 301.924);
     --color-gray-50: oklch(98.5% 0.002 247.839);
     --color-gray-300: oklch(87.2% 0.01 258.338);
     --color-gray-400: oklch(70.7% 0.022 261.325);
@@ -6239,9 +6239,6 @@
   .flex-shrink {
     flex-shrink: 1;
   }
-  .shrink-0 {
-    flex-shrink: 0;
-  }
   .flex-grow {
     flex-grow: 1;
   }
@@ -6846,9 +6843,6 @@
     color: var(--color-warning-content);
     --alert-color: var(--color-warning);
   }
-  .border-blue-200 {
-    border-color: var(--color-blue-200);
-  }
   .border-gray-300 {
     border-color: var(--color-gray-300);
   }
@@ -6954,9 +6948,6 @@
   .bg-base-300 {
     background-color: var(--color-base-300);
   }
-  .bg-blue-50 {
-    background-color: var(--color-blue-50);
-  }
   .bg-gray-50 {
     background-color: var(--color-gray-50);
   }
@@ -6965,6 +6956,9 @@
   }
   .bg-indigo-600 {
     background-color: var(--color-indigo-600);
+  }
+  .bg-purple-600 {
+    background-color: var(--color-purple-600);
   }
   .bg-white {
     background-color: var(--color-white);
@@ -7094,9 +7088,6 @@
   }
   .fill-current {
     fill: currentcolor;
-  }
-  .stroke-info {
-    stroke: var(--color-info);
   }
   .checkbox-lg {
     padding: 0.3125rem;
@@ -8542,6 +8533,13 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-indigo-700);
+      }
+    }
+  }
+  .hover\:bg-purple-700 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-purple-700);
       }
     }
   }

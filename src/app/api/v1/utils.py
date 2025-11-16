@@ -19,7 +19,7 @@ templates = Jinja2Templates(directory="src/app/api/templates")
 
 router = APIRouter(tags=["utils"])
 
-@router.post("/analyze", response_model=Job, status_code=201, dependencies=[Depends(rate_limiter_dependency)])
+@router.post("/analyze", response_model=Job, status_code=201)#, dependencies=[Depends(rate_limiter_dependency)])
 async def analyze_text(
         current_user: Annotated[dict, Depends(get_current_user)],
         text: str = Form(...), 
