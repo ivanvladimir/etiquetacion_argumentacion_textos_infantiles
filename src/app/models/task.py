@@ -24,6 +24,7 @@ class Task(Base):
 
     id: Mapped[int] = mapped_column("id", autoincrement=True, nullable=False, unique=True, primary_key=True, init=False)
     created_by_user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), index=True)
+    document_id: Mapped[str] = mapped_column(String(12), unique=True, index=True)
     name: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[TaskStatus] = mapped_column(Enum(TaskStatus), default=TaskStatus.STARTING)

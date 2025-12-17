@@ -39,7 +39,8 @@ class TimestampTaskSchema(BaseModel):
         return None
 
 class TaskBase(BaseModel):
-    name: Annotated[str, Field(min_length=2, max_length=500, examples=["Name of my task"])]
+    name: Annotated[str, Field(min_length=2, max_length=500, examples=["Nombre de la tarea"])]
+    document_id: Annotated[str, Field( min_length=12, max_length=12, description="Hash ID del document")]
     status: Annotated[TaskStatus, Field(default=TaskStatus.STARTING)]
 
 class Task(TimestampTaskSchema, TaskBase,PersistentDeletion):
@@ -47,7 +48,7 @@ class Task(TimestampTaskSchema, TaskBase,PersistentDeletion):
 
 class TaskRead(BaseModel):
     id: int
-    name: Annotated[str, Field(min_length=2, max_length=500, examples=["This is my task"])]
+    name: Annotated[str, Field(min_length=2, max_length=500, examples=["Esta es mi tarea"])]
     status: Annotated[TaskStatus, Field(default=TaskStatus.STARTING)]
     created_by_user_id: int
 

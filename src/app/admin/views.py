@@ -8,7 +8,7 @@ from ..core.security import get_password_hash
 from ..models.task import Task
 from ..models.tier import Tier
 from ..models.user import User
-from ..schemas.task import TaskUpdate
+from ..schemas.task import TaskUpdate, TaskCreate, TaskCreateInternal
 from ..schemas.tier import TierCreate, TierUpdate
 from ..schemas.user import UserCreate, UserCreateInternal, UserUpdate
 
@@ -58,7 +58,8 @@ def register_admin_views(admin: CRUDAdmin) -> None:
 
     admin.add_view(
         model=Task,
-        create_schema=TaskCreateAdmin,
+        create_schema=TaskCreate,
         update_schema=TaskUpdate,
+        update_internal_schema=TaskCreateInternal,
         allowed_actions={"view", "create", "update", "delete"},
     )
