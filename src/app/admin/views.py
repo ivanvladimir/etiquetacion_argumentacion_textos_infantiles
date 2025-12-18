@@ -46,7 +46,7 @@ def register_admin_views(admin: CRUDAdmin) -> None:
         update_schema=UserUpdate,
         update_internal_schema=UserCreateInternal,
         password_transformer=password_transformer,
-        allowed_actions={"view", "create", "update"},
+        allowed_actions={"view", "create", "update","delete"},
     )
 
     admin.add_view(
