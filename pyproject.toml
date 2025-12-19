@@ -16,4 +16,5 @@ dependencies = [
     "markdown>=3.10",
     "pydantic>=2.12.4",
     "pydantic-settings>=2.12.0",
+    "transformers>=4.57.3",
 ]

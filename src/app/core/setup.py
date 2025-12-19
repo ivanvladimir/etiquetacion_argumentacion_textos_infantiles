@@ -32,11 +32,13 @@ from .config import (
     RedisQueueSettings,
     RedisRateLimiterSettings,
     CORSSettings,
+    MLModelsSettings,
     settings,
 )
 from .db.database import Base
 from .db.database import async_engine as engine
 from .utils import cache, queue
+from .ml_models import ModelCache
 
 
 # -------------- database --------------
@@ -75,6 +77,10 @@ async def close_redis_rate_limit_pool() -> None:
     if rate_limiter.client is not None:
         await rate_limiter.client.aclose()  # type: ignore
 
+
+# -------------- queue --------------
+async def load_ml_models() -> None:
+    queue.pool = await load_models(MLModelsSettings(path=settings.ML_MODELS_PATH, model_names=settings.ML_MODELS_NAMES))
 
 # -------------- application --------------
 async def set_threadpool_tokens(number_of_tokens: int = 100) -> None:
@@ -119,6 +125,10 @@ def lifespan_factory(
 
             if create_tables_on_start:
                 await create_tables()
+
+            if isinstance(settings, MLModelsSettings):
+                app.state.model_cache = ModelCache()
+                await app.state.model_cache.load_models(model_path=settings.ML_MODELS_DIRPATH, model_names=settings.ML_MODELS_NAMES)
 
             process = tailwind.compile(
                 static_files.directory + "/output.css",
