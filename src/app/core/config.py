@@ -116,8 +116,8 @@ class CRUDAdminSettings(BaseSettings):
     CRUD_ADMIN_REDIS_SSL: bool = config("CRUD_ADMIN_REDIS_SSL", default=False)
 
 class MLModelsSettings(BaseSettings):
-    ML_MODELS_DIRPATH: str = config("ML_MODEL_DIRPATH", default='ml_models')
-    ML_MODELS_NAMES: list[str] = config("ML_MODEL_NAMES",cast=lambda v: [s.strip() for s in v.split(',')], default='infantiles-argumentation-xlm-roberta')
+    ML_MODELS_DIRPATH: str = config("ML_MODELS_DIRPATH", default='../ml_models')
+    ML_MODELS_NAMES: list[str] = config("ML_MODELS_NAMES",cast=lambda v: [s.strip() for s in v.split(',')], default='infantiles-argumentation-xlm-roberta')
 
 
 class EnvironmentOption(Enum):

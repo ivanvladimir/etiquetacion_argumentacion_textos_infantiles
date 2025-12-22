@@ -13,30 +13,6 @@ templates = Jinja2Templates(directory="src/app/api/v1/templates")
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
-@router.post("/task", response_model=Job, status_code=201, dependencies=[Depends(rate_limiter_dependency)])
-async def create_task(filename: str) -> dict[str, str]:
-    """Create a new background task.
-
-    Parameters
-    ----------
-    message: str
-        The message or data to be processed by the task.
-
-    Returns
-    -------
-    dict[str, str]
-        A dictionary containing the ID of the created task.
-    """
-    if queue.pool is None:
-        raise HTTPException(status_code=503, detail="Queue is not available")
-
-    job = await queue.pool.enqueue_job("sample_background_task", filename)
-    if job is None:
-        raise HTTPException(status_code=500, detail="Failed to create task")
-
-    return {"id": job.job_id}
-
-
 @router.get("/task")
 @router.get("/task/{task_id}")
 async def task_status(
@@ -55,7 +31,7 @@ async def task_status(
         A dictionary containing information about the task if found, or None otherwise.
     """
     if queue.pool is None:
-        raise HTTPException(status_code=503, detail="Queue is not available")
+        raise HTTPException(status_code=503, detail="La cola de trabajos no está disponible")
 
     job = ArqJob(task_id, queue.pool)
     job_info = await job.info()
@@ -67,7 +43,8 @@ async def task_status(
         name="task_status.html",
         context={
             'info':job_info.__dict__, 
-            'status':str(await job.status())
+            'status':str(await job.status()),
+            'result':await job.result_info(),
         },
     )
     return response

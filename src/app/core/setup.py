@@ -38,7 +38,7 @@ from .config import (
 from .db.database import Base
 from .db.database import async_engine as engine
 from .utils import cache, queue
-from .ml_models import ModelCache
+from .ml_models import model_cache
 
 
 # -------------- database --------------
@@ -125,10 +125,6 @@ def lifespan_factory(
 
             if create_tables_on_start:
                 await create_tables()
-
-            if isinstance(settings, MLModelsSettings):
-                app.state.model_cache = ModelCache()
-                await app.state.model_cache.load_models(model_path=settings.ML_MODELS_DIRPATH, model_names=settings.ML_MODELS_NAMES)
 
             process = tailwind.compile(
                 static_files.directory + "/output.css",
@@ -239,7 +235,6 @@ def create_application(
     application.mount("/static", static_files, name="static")
 
     if isinstance(settings, CORSSettings):
-        print(settings.BACKEND_CORS_ORIGINS)
         if settings.BACKEND_CORS_ORIGINS:
             application.add_middleware(
                 CORSMiddleware,

@@ -105,3 +105,6 @@ class ModelCache:
         self.tokenizers.clear()
         torch.cuda.empty_cache()
         self.logger.info("Cache cleanup completed")
+
+
+model_cache = ModelCache()

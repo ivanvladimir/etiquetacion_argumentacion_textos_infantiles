@@ -13,7 +13,7 @@
 
 <div role="alert" class="alert alert-info alert-soft alert-vertical sm:alert-horizontal">
   <div class="inline-grid *:[grid-area:1/1]">
-    {{ status2tag[status] | safe }}
+    {{ status2tag[status] | safe }} | {{result}}
   </div>La tarea {{info['args'][0]}} está {{ status2label[status]}}.
   <div>
     <a x-show="isAnalyzing" role="button" class="btn btn-sm btn-primary">Ver estado de tarea</a>

@@ -24,15 +24,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: arq app.core.worker.settings.WorkerSettings --verbose
     env_file:
       - ./src/.env
     depends_on:
       - db
       - redis
+    command: /app/.venv/bin/arq app.core.worker.settings.WorkerSettings --verbose
     volumes:
-      - ./src/app:/code/app
-      - ./src/.env:/code/.env
+      - ./src/app:/app/src/app
+
 
   db:
     image: postgres:13
