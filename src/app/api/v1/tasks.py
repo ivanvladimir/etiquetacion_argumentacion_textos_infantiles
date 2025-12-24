@@ -1,10 +1,11 @@
-from typing import Any
+from typing import Annotated, Any
 
 from arq.jobs import Job as ArqJob
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from ...api.dependencies import get_current_user
 from ...api.dependencies import rate_limiter_dependency
 from ...core.utils import queue
 from ...schemas.job import Job
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 @router.get("/task/{task_id}")
 async def task_status(
     request: Request,
+    current_user: Annotated[dict, Depends(get_current_user)],
     task_id: str = "") -> HTMLResponse:
     """Get information about a specific background task.
 
