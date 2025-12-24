@@ -42,7 +42,8 @@ async def task_status(
         request=request,
         name="task_status.html",
         context={
-            'info':job_info.__dict__, 
+            'info':job_info.__dict__,
+            'task_id':task_id,
             'status':str(await job.status()),
             'result':await job.result_info(),
         },

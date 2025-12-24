@@ -16,7 +16,7 @@ async def sample_background_task(ctx: Worker, name: str) -> str:
     await asyncio.sleep(5)
     return f"Task {name} is complete!"
 
-async def predict_task(ctx: Worker, model_name: str, text: str) -> dict:
+async def predict_task(ctx: Worker, model_name: str, task_name: str, text: str) -> dict:
     """Token classification prediction task"""
     cache = ctx["model_cache"]
     

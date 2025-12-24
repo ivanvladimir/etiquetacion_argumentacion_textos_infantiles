@@ -9,7 +9,6 @@
       <h1 class="text-4xl font-bold text-gray-800 mb-2">Analiza un texto</h1>
       <p class="text-gray-600">Sube un archivo, arrastralo o pegalo</p>
   </div>
-
   <!-- Input Methods -->
   <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
       <div class="space-y-6">
@@ -23,7 +22,6 @@
                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:cursor-pointer cursor-pointer"
               >
           </div>
-
           <!-- Drag & Drop Zone -->
           <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">Arrastra y soltar</label>
@@ -38,10 +36,9 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                   </svg>
                   <p class="text-lg font-medium text-gray-700">Suelta tu texto aquí</p>
-                  <p class="text-sm text-gray-500 mt-1">Arhivos tipo: .txt o .docx</p>
+                  <p class="text-sm text-gray-500 mt-1">Archivos tipo: .txt o .docx</p>
               </div>
           </div>
-
           <!-- Paste Area -->
           <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">O pega el texto aquí</label>
@@ -53,7 +50,7 @@
               ></textarea>
               <div class="grid grid-cols-2 gap-4">
               <div role="alert" class="alert ">
-                  <span x-text="`Caracteres: ${text.length}`" ></span>
+                  <span x-text="`Caracteres: ${text.length}`"></span>
                   <span x-text="`Palabras: ${text.split(/\s+/).filter(w => w.length > 0).length}`"></span>
               </div>
               <button 
@@ -63,53 +60,51 @@
                       Borrar texto
               </button>
               </div>
-
               <button
-                  :disabled="isAnalyzing || taskId"
+                  :disabled="isAnalyzing"
                   @click="startAnalysis"
-                  class="mt-3 w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
+                  :class="isAnalyzing ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'"
+                  class="mt-3 w-full px-6 py-3 text-white rounded-lg transition-colors font-semibold"
               >
                   <span x-show="!isAnalyzing">Comenzar análisis</span>
                   <span x-show="isAnalyzing">Analizando...</span>
               </button>
           </div>
       </div>
-
       <!-- Hidden form for HTMX -->
       <form 
           id="analysisForm"
-          hx-post="{{url_for('analyze_text')}}"
-          hx-trigger="submit"
-          hx-vals="js:{text: window.textHandlerInstance.text, filename: window.textHandlerInstance.fileName}"
-          @htmx:after-request="handleFormResponse($event)"
-          @htmx:response-error="handleError($event)"
+          @submit.prevent="submitForm($event)"
           style="display: none;"
       >
           <input type="hidden" name="text" :value="text">
           <input type="hidden" name="filename" :value="fileName">
       </form>
-      
-      <!-- Analysis Result - Target for status polling -->
-      <div 
-          id="analysisResult" 
-          class="mb-4"
-          @htmx:after-swap.window="checkCompletion($event)"
-      ></div 
-     
+  </div>
+</div>
 
-      <!-- Clear Results Button -->
-      <div x-show="!isAnalyzing && taskId !== null" class="mb-4">
-          <button 
-              @click="resetAnalysis"
-              class="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
-          >
-              Limpiar resultados y comenzar nuevo análisis
-          </button>
+<!-- Tasks Table -->
+<div class="card bg-base-100 shadow-xl max-w-4xl mx-auto">
+  <div class="card-body">
+      <h2 class="card-title mb-4">Tareas de análisis</h2>
+      <div class="overflow-x-auto">
+          <table class="table w-full">
+              <thead>
+                  <tr class="bg-base-200">
+                      <th>Nombre de tarea</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                  </tr>
+              </thead>
+              <tbody id="table-tasks">
+                  <!-- Task rows will be inserted here -->
+              </tbody>
+          </table>
       </div>
   </div>
 </div>
-{% endblock %}
 
+{% endblock %}
 {% block script %}
 <script>
 function textHandler() {
@@ -118,15 +113,13 @@ function textHandler() {
       isDragging: false,
       fileName: '',
       isAnalyzing: false,
-      taskId: null,
-      analysisStatus: '',
-      pollingInterval: null,
+      activeTasks: {}, // Track active tasks and their polling intervals
       
       handleFiles(files) {
           if (files.length === 0) return;
           const file = files[0];
           
-          if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.txt')) {
+          if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
               this.fileName = file.name;
               const reader = new FileReader();
               reader.onload = (e) => {
@@ -135,7 +128,7 @@ function textHandler() {
               };
               reader.readAsText(file);
           } else {
-              alert('Subir un archivo de texto (.txt) o word (.docx)');
+              alert('Subir un archivo de texto (.txt)');
           }
       },
       
@@ -148,10 +141,9 @@ function textHandler() {
           const pastedText = e.clipboardData.getData('text');
           if (pastedText) {
               this.text = pastedText;
-              this.fileName = 'Pega el texto aquí';
+              this.fileName = 'Texto pegado';
           }
       },
-
       clearText() {
             this.text = '';
             this.fileName = '';
@@ -164,129 +156,118 @@ function textHandler() {
         }
         
         this.isAnalyzing = true;
-        this.taskId = null;
-        
-        // Clear the result div
-        document.getElementById('analysisResult').innerHTML = '';
-        
-        console.log('Submitting analysis with text length:', this.text.length);
-        console.log('Filename:', this.fileName);
-        
-        // Trigger HTMX form submission
         const form = document.getElementById('analysisForm');
         htmx.trigger(form, 'submit');
       },
 
-      handleFormResponse(event) {
-        try {
-            const response = JSON.parse(event.detail.xhr.response);
-            if (response.id) {
-                this.taskId = response.id;
-                // Start polling after receiving task_id
-                this.startPolling();
-            } else {
-                this.isAnalyzing = false;
-                alert('Error: No se recibió el ID de la tarea');
-            }
-        } catch (error) {
-            console.error('Error parsing response:', error);
-            this.isAnalyzing = false;
-            alert('Error al iniciar el análisis');
-        }
+      submitForm(event) {
+          console.log('Form submitted');
+          
+          const formData = new FormData();
+          formData.set('text', this.text);
+          formData.set('filename', this.fileName);
+          
+          fetch("{{url_for('analyze_text')}}", {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${localStorage.access_token}`},
+              credentials: 'include',
+              body: formData
+          })
+          .then(response => response.text())
+          .then(html => {
+              console.log('Received response for new task');
+              // Insert into table
+              const tbody = document.getElementById('table-tasks');
+              tbody.insertAdjacentHTML('afterbegin', html);
+              
+              // Get task ID and start polling
+              const newRow = tbody.querySelector('tr:first-child');
+              console.log(newRow);
+              if (newRow && newRow.dataset.taskId) {
+                  const taskId = newRow.dataset.taskId;
+                  console.log('Starting polling for task:', taskId);
+                  this.startPollingForTask(taskId);
+              }
+              
+              // Reset form and text
+              this.isAnalyzing = false;
+              this.text = '';
+              this.fileName = '';
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              this.isAnalyzing = false;
+              alert('Error al iniciar el análisis');
+          });
       },
 
-      startPolling() {
-          // Clear any existing polling interval
-          if (this.pollingInterval) {
-              clearInterval(this.pollingInterval);
-          }
+      startPollingForTask(taskId) {
+          // Store the polling interval for this task
+          const pollUrl = `{{url_for('task_status')}}/${taskId}`;
+          console.log("Checking status for task:", taskId);
           
-          // Make sure taskId exists
-          if (!this.taskId) {
-              console.error('No task ID available');
-              this.isAnalyzing = false;
-              return;
-          }
-          
-          console.log('Starting polling for task:', this.taskId);
-          
-          // Function to check status
           const checkStatus = () => {
-              const statusUrl = `{{url_for('task_status')}}/${this.taskId}`;
-              console.log('Checking status at:', statusUrl);
-              
-              fetch(statusUrl)
+              fetch(pollUrl)
                   .then(response => response.text())
                   .then(html => {
-                      // Update the result div
-                      document.getElementById('analysisResult').innerHTML = html;
-                      
-                      // Check if task is complete
-                      this.checkCompletion();
+                      // Find the row for this task and update it
+                      const row = document.querySelector(`[data-task-id="${taskId}"]`);
+                      if (row) {
+                          // Update the Estado column (usually the 2nd td)
+                          const estadoCell = row.querySelector('td:nth-child(2)');
+                          if (estadoCell) {
+                              estadoCell.innerHTML = html;
+                          }
+                          
+                          // Check if task is complete
+                          if (html.includes('completed') || html.includes('failed') || 
+                              html.includes('Completado') || html.includes('Error')) {
+                              // Stop polling for this task
+                              if (this.activeTasks[taskId]) {
+                                  clearInterval(this.activeTasks[taskId]);
+                                  delete this.activeTasks[taskId];
+                              }
+                          }
+                      }
                   })
                   .catch(error => {
                       console.error('Error checking status:', error);
-                      this.stopPolling();
-                      this.isAnalyzing = false;
+                      if (this.activeTasks[taskId]) {
+                          clearInterval(this.activeTasks[taskId]);
+                          delete this.activeTasks[taskId];
+                      }
                   });
           };
           
-          // Start polling every 2 seconds
-          this.pollingInterval = setInterval(checkStatus, 2000);
-          
-          // Trigger initial check immediately
+          // Check immediately
           checkStatus();
+          
+          // Then poll every 1 second
+          const intervalId = setInterval(checkStatus, 1000);
+          this.activeTasks[taskId] = intervalId;
       },
-      
-      checkCompletion(event) {
-          // Check the HTML content for completion indicators
-          const resultDiv = document.getElementById('analysisResult');
-          
-          if (!resultDiv) return;
-          
-          console.log('Checking completion...');
-          
-          // Check for data attributes or classes indicating completion
-          if (resultDiv.querySelector('[data-status="completed"]') || 
-              resultDiv.querySelector('[data-status="failed"]') ||
-              resultDiv.querySelector('.analysis-complete') || 
-              resultDiv.querySelector('.analysis-failed')) {
-              
-              console.log('Analysis complete, stopping polling');
-              this.stopPolling();
-              this.isAnalyzing = false;
+
+      stopPollingForTask(taskId) {
+          if (this.activeTasks[taskId]) {
+              clearInterval(this.activeTasks[taskId]);
+              delete this.activeTasks[taskId];
           }
       },
 
-      stopPolling() {
-          if (this.pollingInterval) {
-              clearInterval(this.pollingInterval);
-              this.pollingInterval = null;
-          }
+      stopAllPolling() {
+          Object.keys(this.activeTasks).forEach(taskId => {
+              clearInterval(this.activeTasks[taskId]);
+          });
+          this.activeTasks = {};
       },
-      
-      handleError(event) {
-          this.isAnalyzing = false;
-          this.stopPolling();
-          alert('El análisis falló, intentar de nuevo.');
-      },     
 
-      resetAnalysis() {
-          // Stop any ongoing polling
-          this.stopPolling();
-          
-          // Clear all state
-          this.isAnalyzing = false;
-          this.taskId = null;
-          
-          // Clear the result div
-          document.getElementById('analysisResult').innerHTML = '';
-          
-          // Optionally clear the text as well
-          this.text = '';
-          this.fileName = '';
-          
-          console.log('Analysis reset, ready for new task');
+      deleteTask(taskId) {
+          this.stopPollingForTask(taskId);
+          const row = document.querySelector(`[data-task-id="${taskId}"]`);
+          if (row) {
+              row.remove();
+          }
       },
   }
 }
