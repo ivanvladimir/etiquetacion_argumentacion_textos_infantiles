@@ -16,7 +16,7 @@ async def sample_background_task(ctx: Worker, name: str) -> str:
     await asyncio.sleep(5)
     return f"Task {name} is complete!"
 
-async def predict_task(ctx: Worker, model_name: str, task_name: str, text: str) -> dict:
+async def predict_task(ctx: Worker, model_name: str, document_id: str, document_name: str, text: str) -> dict:
     """Token classification prediction task"""
     cache = ctx["model_cache"]
     
@@ -43,6 +43,8 @@ async def predict_task(ctx: Worker, model_name: str, task_name: str, text: str) 
         
         result = {
             "model": model_name,
+            "document_id": document_id,
+            "document_name": document_name,
             "tokens": tokens,
             "predictions": predictions[0].tolist(),
             "status": "success"
@@ -55,6 +57,8 @@ async def predict_task(ctx: Worker, model_name: str, task_name: str, text: str) 
         logger.error(f"Prediction failed: {str(e)}", exc_info=True)
         return {
             "model": model_name,
+            "document_id": document_id,
+            "document_name": document_name,
             "status": "error",
             "error": str(e)
         }

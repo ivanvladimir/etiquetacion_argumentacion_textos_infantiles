@@ -28,6 +28,8 @@ class CryptSettings(BaseSettings):
 
 class DatabaseSettings(BaseSettings):
     MEILI_MASTER_KEY: str = config("MEILI_MASTER_KEY", default="")
+    MEILI_URI: str = config("MEILI_URI", default="http://localhost")
+    MEILI_PORT: str = config("MEILI_PORT", default="7700")
 
 class SQLiteSettings(DatabaseSettings):
     SQLITE_URI: str = config("SQLITE_URI", default="./sql_app.db")

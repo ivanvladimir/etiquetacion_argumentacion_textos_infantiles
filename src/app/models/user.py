@@ -18,7 +18,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(20), unique=True, index=True)
     email: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String)
-    institution: Mapped[str] = mapped_column(String, default=None)
+    institution: Mapped[str] = mapped_column(String, default=None, nullable=True)
     description: Mapped[str] = mapped_column(String, default=None)
 
     uuid: Mapped[uuid_pkg.UUID] = mapped_column(UUID(as_uuid=True), default_factory=uuid7, unique=True)

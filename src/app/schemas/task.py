@@ -2,15 +2,9 @@ from datetime import datetime
 from typing import Annotated, Any, Optional
 from enum import Enum as PyEnum
 
-class TaskStatus(PyEnum):
-    """Enum for task status"""
-    STARTING = "starting"
-    RUNNING = "running"
-    FINISHED = "finished"
-    ERROR = "error"
-
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from ..core.schemas import PersistentDeletion, TimestampSchema, UUIDSchema
+from ..models.task import TaskStatus
 
 class TimestampTaskSchema(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
@@ -40,7 +34,8 @@ class TimestampTaskSchema(BaseModel):
 
 class TaskBase(BaseModel):
     name: Annotated[str, Field(min_length=2, max_length=500, examples=["Nombre de la tarea"])]
-    document_id: Annotated[str, Field( min_length=12, max_length=12, description="Hash ID del document")]
+    document_id: Annotated[str, Field( min_length=12, max_length=36, description="Hash ID del document")]
+    task_id: Annotated[str, Field( min_length=12, max_length=36, description="Hash ID del document")]
     status: Annotated[TaskStatus, Field(default=TaskStatus.STARTING)]
 
 class Task(TimestampTaskSchema, TaskBase,PersistentDeletion):

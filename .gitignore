@@ -220,4 +220,5 @@ __marimo__/
 
 # project
 ml_models
+meili_data
 src/app/static/output.css

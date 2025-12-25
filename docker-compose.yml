@@ -32,6 +32,7 @@ services:
     command: /app/.venv/bin/arq app.core.worker.settings.WorkerSettings --verbose
     volumes:
       - ./src/app:/app/src/app
+      - ./ml_models:/app/ml_models
 
 
   db:
