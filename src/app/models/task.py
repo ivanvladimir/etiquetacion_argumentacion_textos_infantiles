@@ -24,7 +24,6 @@ class Task(Base):
     id: Mapped[int] = mapped_column("id", autoincrement=True, nullable=False, unique=True, primary_key=True, init=False)
     created_by_user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), index=True)
     document_id: Mapped[str] = mapped_column(String(50), unique=True, index=True)
-    task_id: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     name: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[TaskStatus] = mapped_column(
         Enum(TaskStatus, native_enum=True),
@@ -36,6 +35,8 @@ class Task(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     is_deleted: Mapped[bool] = mapped_column(default=False, index=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    
+    task_id: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True, default=None)
 
     def __repr__(self):
         return f"<Task(id={self.id}, name='{self.name}', status={self.status.value})>"
