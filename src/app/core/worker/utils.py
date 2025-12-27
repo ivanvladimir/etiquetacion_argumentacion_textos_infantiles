@@ -104,7 +104,7 @@ def create_html_output(spans):
             # Create HTML tag with label
             # Convert label to valid CSS class name (remove special chars)
             class_name = label.replace('-', '_').lower()
-            html_parts.append(f'<span class="{class_name}">{text}</span>')
+            html_parts.append(f'<span label_type="{class_name}">{text}</span>')
     
     # Join with spaces
     html_output = ' '.join(html_parts)
