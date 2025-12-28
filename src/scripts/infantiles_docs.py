@@ -65,7 +65,7 @@ def transform_document(doc: dict) -> dict:
     # Apply labels from end to beginning
     html_text = text
     for start, end, label_type in sorted_labels:
-        tagged_text = f'<span label_type="{label_type}">{text[start:end]}</span>'
+        tagged_text = f'<span class="labeled-span" label_type="{label_type}">{text[start:end]}</span>'
         html_text = html_text[:start] + tagged_text + html_text[end:]
     
     return html_text
@@ -87,9 +87,9 @@ async def add_documents_(filename:str, collection_name:str, index: str):
 
     documents=[]
     for i,(doc,html) in enumerate(htmls):
-        document_id_=uuid.uuid4().hex
+        document_id=uuid.uuid4().hex
         documents.append({
-            'id': document_id_,
+            'id': document_id,
             'text':doc,
             'name_document':f"{i}",
             'type':'original',
@@ -99,6 +99,7 @@ async def add_documents_(filename:str, collection_name:str, index: str):
         document_id_=uuid.uuid4().hex
         documents.append({
             'id': document_id_,
+            'id_original':document_id,
             'text':html,
             'name_document':f"{i}",
             'type':'manual',

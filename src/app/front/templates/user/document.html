@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% block title %}Texto{% endblock %}
+{% block restricted_content %}
+<div class="max-w-4xl mx-auto">
+<div x-data="labelViewer()" class="min-h-screen p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Label Controls -->
+      <details class="collapse collapse-arrow bg-base-100 shadow-lg mb-8">
+        <summary class="collapse-title text-lg md:text-xl font-semibold px-4">Filtros de etiquetas</summary>
+        <div class="collapse-content px-4 pt-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 mb-4">
+            <template x-for="label in labels" :key="label.id">
+              <label class="label cursor-pointer gap-2 p-2 hover:bg-base-200 rounded">
+                <input 
+                  type="checkbox" 
+                  class="checkbox checkbox-sm"
+                  :checked="visibleLabels.includes(label.id)"
+                  @change="toggleLabel(label.id)"
+                >
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                  <span 
+                    class="px-2 py-1 text-xs font-semibold rounded text-nowrap flex-shrink-0"
+                    :style="{ backgroundColor: label.background_color, color: label.text_color }"
+                  >
+                    <span x-text="label.text"></span>
+                  </span>
+                  <span class="text-xs text-base-content/50 hidden sm:inline" :x-text="(label.prefix_key ? label.prefix_key + '+' : '') + label.suffix_key"></span>
+                </div>
+              </label>
+            </template>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-center">
+            <div class="flex flex-col sm:flex-row gap-2 flex-1">
+              <button @click="selectAll()" class="btn btn-sm btn-outline flex-1">Mostrar todas</button>
+              <button @click="deselectAll()" class="btn btn-sm btn-outline flex-1">No mostrar ninguna</button>
+            </div>
+            <label class="label cursor-pointer gap-2 whitespace-nowrap">
+              <span class="label-text text-sm">Mostrar etiquetas</span>
+              <input 
+                type="checkbox" 
+                class="toggle toggle-sm"
+                :checked="showSubscripts"
+                @change="toggleSubscripts()"
+              >
+            </label>
+          </div>
+        </div>
+      </details>
+      <div 
+        hx-post="{{url_for('api_document',document_id=document_id)}}"
+        hx-target="#doc_content"
+        hx-trigger="load"
+        >
+      </div>
+      <!-- Document -->
+      <div id="doc_content" class="card bg-base-100 shadow-lg">
+      </div>
+    </div>
+  </div>
+</div>
+  <style>
+    .labeled-span {
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      transition: color 0.3s ease, background-color 0.3s ease;
+    }
+    .labeled-span.hidden-label {
+      color: #000000 !important;
+      background-color: transparent !important;
+    }
+  </style>
+{% endblock %}
+{% block script %}
+<script>
+    function labelViewer() {
+      return {
+        labels: [
+          { id: 95, text: "Copia-compañere", prefix_key: null, suffix_key: "c", background_color: "#2fdec8", text_color: "#ffffff" },
+          { id: 96, text: "Copiado", prefix_key: "ctrl", suffix_key: "c", background_color: "#26d720", text_color: "#ffffff" },
+          { id: 97, text: "Propuesta", prefix_key: null, suffix_key: "p", background_color: "#543965", text_color: "#ffffff" },
+          { id: 98, text: "Referencias", prefix_key: null, suffix_key: "r", background_color: "#96e45b", text_color: "#ffffff" },
+          { id: 99, text: "Sospecha uso IAG", prefix_key: null, suffix_key: "s", background_color: "#e960b9", text_color: "#ffffff" },
+          { id: 100, text: "Sospecha-copia", prefix_key: "ctrl", suffix_key: "s", background_color: "#5ef1ae", text_color: "#ffffff" },
+          { id: 101, text: "argumento", prefix_key: null, suffix_key: "a", background_color: "#125336", text_color: "#ffffff" },
+          { id: 102, text: "aseveración", prefix_key: "ctrl", suffix_key: "a", background_color: "#9522e9", text_color: "#ffffff" },
+          { id: 103, text: "conclusion", prefix_key: "shift", suffix_key: "c", background_color: "#12a19a", text_color: "#ffffff" },
+          { id: 104, text: "conector-logico", prefix_key: "ctrl shift", suffix_key: "c", background_color: "#6d32f2", text_color: "#ffffff" },
+          { id: 105, text: "contra-argumento", prefix_key: null, suffix_key: "o", background_color: "#ca4aea", text_color: "#ffffff" },
+          { id: 106, text: "ejemplificación", prefix_key: null, suffix_key: "e", background_color: "#b8758b", text_color: "#ffffff" },
+          { id: 107, text: "especificación", prefix_key: "ctrl", suffix_key: "e", background_color: "#ad1f97", text_color: "#ffffff" },
+          { id: 108, text: "organizador", prefix_key: "ctrl", suffix_key: "o", background_color: "#d8da18", text_color: "#ffffff" },
+          { id: 109, text: "paráfrasis", prefix_key: "ctrl", suffix_key: "p", background_color: "#049252", text_color: "#ffffff" },
+          { id: 110, text: "peritexto", prefix_key: "shift", suffix_key: "p", background_color: "#a3a584", text_color: "#ffffff" },
+          { id: 111, text: "postura", prefix_key: "ctrl shift", suffix_key: "p", background_color: "#ee50ac", text_color: "#ffffff" },
+          { id: 112, text: "pregunta-retorica", prefix_key: "ctrl", suffix_key: "r", background_color: "#7b415e", text_color: "#ffffff" },
+          { id: 113, text: "sin-sentido", prefix_key: "shift", suffix_key: "s", background_color: "#9deb82", text_color: "#ffffff" }
+        ],
+        visibleLabels: [],
+        showSubscripts: true,
+        init() {
+          // Initialize all labels as visible
+          this.visibleLabels = this.labels.map(l => l.id);
+          
+          // Setup keyboard shortcuts
+          document.addEventListener('keydown', (e) => this.handleKeyboardShortcut(e));
+          
+          // Listen for HTMX swap events
+          const self = this;
+          document.addEventListener('htmx:afterSwap', function(evt) {
+            setTimeout(() => {
+              self.applyLabelStyles();
+            }, 100);
+          });
+        },
+        toggleLabel(labelId) {
+          const idx = this.visibleLabels.indexOf(labelId);
+          if (idx > -1) {
+            this.visibleLabels.splice(idx, 1);
+          } else {
+            this.visibleLabels.push(labelId);
+          }
+          this.applyLabelStyles();
+        },
+        selectAll() {
+          this.visibleLabels = this.labels.map(l => l.id);
+          this.applyLabelStyles();
+        },
+        deselectAll() {
+          this.visibleLabels = [];
+          this.applyLabelStyles();
+        },
+        toggleSubscripts() {
+          this.showSubscripts = !this.showSubscripts;
+          this.applyLabelStyles();
+        },
+        applyLabelStyles() {
+          const spans = document.querySelectorAll('.labeled-span');
+          
+          spans.forEach(span => {
+            const labelType = span.getAttribute('label_type');
+            const label = this.labels.find(l => l.text === labelType);
+            
+            if (label) {
+              if (this.visibleLabels.includes(label.id)) {
+                // Visible: show with original colors
+                span.classList.remove('hidden-label');
+                span.style.backgroundColor = label.background_color;
+                span.style.color = label.text_color;
+              } else {
+                // Hidden: show with transparent background and black text
+                span.classList.add('hidden-label');
+              }
+              
+              // Manage subscript based on toggle
+              const existingSub = span.querySelector('sub');
+              if (this.showSubscripts) {
+                if (!existingSub) {
+                  const sub = document.createElement('sub');
+                  sub.className = 'opacity-90 text-xs';
+                  sub.style.color = '#000000';
+                  sub.textContent = ' ' + label.text;
+                  span.appendChild(sub);
+                }
+              } else {
+                if (existingSub) {
+                  existingSub.remove();
+                }
+              }
+            }
+          });
+        },
+        handleKeyboardShortcut(e) {
+          const key = e.key.toLowerCase();
+          let prefix = '';
+          
+          if (e.ctrlKey && e.shiftKey) prefix = 'ctrl shift';
+          else if (e.ctrlKey) prefix = 'ctrl';
+          else if (e.shiftKey) prefix = 'shift';
+          
+          const matchedLabel = this.labels.find(label => {
+            const labelPrefix = label.prefix_key || '';
+            return labelPrefix === prefix && label.suffix_key === key;
+          });
+          
+          if (matchedLabel) {
+            e.preventDefault();
+            this.toggleLabel(matchedLabel.id);
+          }
+        }
+      };
+    }
+  </script>
+{% endblock %}

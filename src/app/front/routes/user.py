@@ -24,3 +24,22 @@ async def labelling(request: Request) -> HTMLResponse:
                  "active_page":'labelling'},
     )
     return response
+
+@router.get("/document/{document_id}")
+async def labelling(
+    document_id: str,
+    request: Request) -> HTMLResponse:
+    """
+    Shows a document
+    """
+    start_time = time.time()
+    response = templates.TemplateResponse(
+        request=request,
+        name="user/document.html",
+        context={
+            "document_id": document_id,
+            "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
+            "active_page":'documents'
+        },
+    )
+    return response
