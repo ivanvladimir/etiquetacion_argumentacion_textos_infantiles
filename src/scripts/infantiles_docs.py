@@ -41,7 +41,7 @@ def transform_jsonl_to_html(input_file: str) -> List[dict]:
             if line.strip():
                 doc = json.loads(line)
                 transformed = transform_document(doc)
-                results.append(transformed)
+                results.append((doc["text"],transformed))
     
     return results
 
@@ -86,7 +86,16 @@ async def add_documents_(filename:str, collection_name:str, index: str):
     htmls=transform_jsonl_to_html(filename)
 
     documents=[]
-    for i,html in enumerate(htmls):
+    for i,(doc,html) in enumerate(htmls):
+        document_id_=uuid.uuid4().hex
+        documents.append({
+            'id': document_id_,
+            'text':doc,
+            'name_document':f"{i}",
+            'type':'original',
+            'model': collection_name,
+            'created_at': datetime.now().isoformat()
+        })
         document_id_=uuid.uuid4().hex
         documents.append({
             'id': document_id_,
