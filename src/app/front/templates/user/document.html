@@ -1,63 +1,76 @@
 {% extends 'base.html' %}
 {% block title %}Texto{% endblock %}
 {% block restricted_content %}
-<div class="max-w-4xl mx-auto">
+<div class="max-w-7xl mx-auto">
 <div x-data="labelViewer()" class="min-h-screen p-4 md:p-8">
-    <div class="max-w-6xl mx-auto">
       <!-- Label Controls -->
       <details class="collapse collapse-arrow bg-base-100 shadow-lg mb-8">
-        <summary class="collapse-title text-lg md:text-xl font-semibold px-4">Filtros de etiquetas</summary>
-        <div class="collapse-content px-4 pt-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 mb-4">
+        <summary class="collapse-title text-lg md:text-xl font-semibold px-4 py-3">Filtros de etiquetas</summary>
+        <div class="collapse-content px-4 py-3">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 md:gap-2 mb-3">
             <template x-for="label in labels" :key="label.id">
-              <label class="label cursor-pointer gap-2 p-2 hover:bg-base-200 rounded">
+              <label class="label cursor-pointer gap-1 p-1 hover:bg-base-200 rounded">
                 <input 
                   type="checkbox" 
-                  class="checkbox checkbox-sm"
+                  class="checkbox checkbox-xs"
                   :checked="visibleLabels.includes(label.id)"
                   @change="toggleLabel(label.id)"
                 >
-                <div class="flex items-center gap-2 flex-1 min-w-0">
+                <div class="flex items-center gap-1 flex-1 min-w-0">
                   <span 
-                    class="px-2 py-1 text-xs font-semibold rounded text-nowrap flex-shrink-0"
+                    class="px-1.5 py-0.5 text-xs font-semibold rounded text-nowrap flex-shrink-0"
                     :style="{ backgroundColor: label.background_color, color: label.text_color }"
                   >
                     <span x-text="label.text"></span>
                   </span>
-                  <span class="text-xs text-base-content/50 hidden sm:inline" :x-text="(label.prefix_key ? label.prefix_key + '+' : '') + label.suffix_key"></span>
+                  <span class="text-xs text-base-content/50 hidden md:inline" :x-text="(label.prefix_key ? label.prefix_key + '+' : '') + label.suffix_key"></span>
                 </div>
               </label>
             </template>
           </div>
-          <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-center">
-            <div class="flex flex-col sm:flex-row gap-2 flex-1">
-              <button @click="selectAll()" class="btn btn-sm btn-outline flex-1">Mostrar todas</button>
-              <button @click="deselectAll()" class="btn btn-sm btn-outline flex-1">No mostrar ninguna</button>
+          <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <div class="flex gap-2 flex-1">
+              <button @click="selectAll()" class="btn btn-xs btn-outline flex-1">Mostrar todas</button>
+              <button @click="deselectAll()" class="btn btn-xs btn-outline flex-1">No mostrar ninguna</button>
             </div>
-            <label class="label cursor-pointer gap-2 whitespace-nowrap">
-              <span class="label-text text-sm">Mostrar etiquetas</span>
-              <input 
-                type="checkbox" 
-                class="toggle toggle-sm"
-                :checked="showSubscripts"
-                @change="toggleSubscripts()"
-              >
-            </label>
           </div>
         </div>
       </details>
+
+      <!-- Show Labels Toggle and Font Size Controls -->
+      <div class="flex justify-between items-center mb-6">
+        <div class="flex gap-2">
+          <button @click="decreaseFontSize()" class="btn btn-sm btn-outline">−</button>
+          <button @click="increaseFontSize()" class="btn btn-sm btn-outline">+</button>
+        </div>
+        <label class="label cursor-pointer gap-2 whitespace-nowrap">
+          <span class="label-text text-sm">Mostrar etiquetas</span>
+          <input 
+            type="checkbox" 
+            class="toggle toggle-sm"
+            :checked="showSubscripts"
+            @change="toggleSubscripts()"
+          >
+        </label>
+      </div>
+
       <div 
         hx-post="{{url_for('api_document',document_id=document_id)}}"
         hx-target="#doc_content"
-        hx-trigger="load"
+        hx-trigger="load delay:100ms"
+        @htmx:responseError="handleError"
+        @htmx:swapError="handleError"
         >
       </div>
-      <!-- Document -->
-      <div id="doc_content" class="card bg-base-100 shadow-lg">
+      <div id="error-message" class="card bg-base-100 shadow-lg p-4 md:p-4 leading-relaxed" hidden>
       </div>
+
+      <!-- Document -->
+      <div id="doc_content" class="card bg-base-100 shadow-lg p-4 md:p-4 leading-relaxed">
+      </div>
+
     </div>
   </div>
-</div>
   <style>
     .labeled-span {
       padding: 0.125rem 0.375rem;
@@ -68,10 +81,22 @@
       color: #000000 !important;
       background-color: transparent !important;
     }
+
+    #doc_content {
+      line-height: 1.8;
+      letter-spacing: 0.3px;
+    }
+
+    #doc_content p {
+      margin-bottom: 1.25rem;
+    }
+
+    #doc_content * {
+      font-size: inherit;
+    }
   </style>
 {% endblock %}
 {% block script %}
-<script>
     function labelViewer() {
       return {
         labels: [
@@ -97,6 +122,8 @@
         ],
         visibleLabels: [],
         showSubscripts: true,
+        fontSize: 18,
+        fontSizeValue: 18,
         init() {
           // Initialize all labels as visible
           this.visibleLabels = this.labels.map(l => l.id);
@@ -109,6 +136,10 @@
           document.addEventListener('htmx:afterSwap', function(evt) {
             setTimeout(() => {
               self.applyLabelStyles();
+              const elem = document.getElementById('doc_content');
+              if (elem) {
+                elem.style.fontSize = self.fontSizeValue + 'px';
+              }
             }, 100);
           });
         },
@@ -133,6 +164,22 @@
           this.showSubscripts = !this.showSubscripts;
           this.applyLabelStyles();
         },
+        increaseFontSize() {
+          this.fontSizeValue += 2;
+          const elem = document.getElementById('doc_content');
+          if (elem) {
+            elem.style.fontSize = this.fontSizeValue + 'px';
+          }
+        },
+        decreaseFontSize() {
+          if (this.fontSizeValue > 14) {
+            this.fontSizeValue -= 2;
+          }
+          const elem = document.getElementById('doc_content');
+          if (elem) {
+            elem.style.fontSize = this.fontSizeValue + 'px';
+          }
+        },
         applyLabelStyles() {
           const spans = document.querySelectorAll('.labeled-span');
           
@@ -156,9 +203,11 @@
               if (this.showSubscripts) {
                 if (!existingSub) {
                   const sub = document.createElement('sub');
-                  sub.className = 'opacity-90 text-xs';
+                  sub.className = 'ml-0.5 px-1.5 py-0.5 rounded-sm text-xs inline-block align-super';
+                  sub.style.backgroundColor = '#ffffff';
                   sub.style.color = '#000000';
-                  sub.textContent = ' ' + label.text;
+                  sub.style.fontSize = '0.5rem';
+                  sub.textContent = label.text;
                   span.appendChild(sub);
                 }
               } else {
@@ -186,8 +235,19 @@
             e.preventDefault();
             this.toggleLabel(matchedLabel.id);
           }
+        },
+        handleError(event) {
+          console.log("Error");
+          const docContent = document.getElementById('doc_content');
+          if (docContent) {
+            docContent.innerHTML = `
+              <div class="alert alert-error">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l-2-2m0 0l-2-2m2 2l2-2m-2 2l-2 2m2-2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Error al cargar el documento. Por favor, intenta de nuevo.</span>
+              </div>
+            `;
+          }
         }
       };
     }
-  </script>
 {% endblock %}

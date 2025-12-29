@@ -38,6 +38,8 @@ async def api_document(
         document_id,
         fields=['name_document','text','created_by']
         )
+    if 'created_by' in doc and doc['created_by'] != current_user['id']:
+        raise ForbiddenException()
 
     response = templates.TemplateResponse(
         request=request,
