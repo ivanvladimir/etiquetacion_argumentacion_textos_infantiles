@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Documentos colección{% endblock %}
+{% block restricted_content %}
+<div class="max-w-7xl mx-auto">
+  <div id="loading-indicator" class="htmx-request:flex hidden flex justify-center items-center p-4">
+    <span class="loading loading-spinner loading-lg"></span>
+  </div>
+
+  <div id="data-table" class="overflow-auto"
+    hx-trigger="load"
+    hx-get="{{url_for('api_docs')}}"
+    hx-target="#table-documents"
+    hx-indicator="#loading-indicator"
+    hx-swap="innerHTML">
+    <table class="table table-zebra w-full">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Documento</th>
+          <th>Modelo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="table-documents">
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

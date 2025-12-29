@@ -50,3 +50,34 @@ async def api_document(
         }
     )
     return response
+
+@router.get("/documents/", status_code=201)#, dependencies=[Depends(rate_limiter_dependency)])
+async def api_docs(
+    request: Request,
+    docsearch: Annotated[AsyncGenerator, Depends(get_meilisearch_client)],
+    page: int = 0,
+    page_size: int = 30,
+) -> HTMLResponse:
+    docs = await docsearch.index('documents').get_documents(
+        fields=['id','name_document','model'],
+        filter= "(type = 'manual' OR type = 'labelled') AND created_by NOT EXISTS",
+        offset=page*page_size,
+        limit=page_size
+        )
+    print(docs)
+
+    response = templates.TemplateResponse(
+        request=request,
+        name="documents.html",
+        context={
+            'documents':docs.results,
+            'offset':page*page_size,
+            'page':page,
+            'last_page': ((page + 1) * page_size + 1) > docs.total,
+        }
+    )
+    return response
+
+   
+
+ 

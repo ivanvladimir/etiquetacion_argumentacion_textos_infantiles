@@ -4,15 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}{% endblock %} ✍️ AATI </title>
-
   <link rel="stylesheet" href="{{ url_for('static', path='output.css') }}" />
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.0/dist/cdn.min.js"></script>
   {% block extra_links %}{% endblock %}
-
+  <style>
+    summary.menu-active {
+      background-color: hsl(var(--n) / var(--tw-bg-opacity, 1));
+      border-radius: 0.5rem;
+      font-weight: 500;
+    }
+  </style>
 </head>
-
 <body>
-
 <script>
 // Define URLs globally before loading external JS files
 window.APP_CONFIG = {
@@ -24,11 +27,9 @@ window.APP_CONFIG = {
   baseUrl: "{{ url_for('main') }}",
 };
 </script>
-
 <div class="min-h-screen flex flex-col">
 <div class="flex-1 flex flex-col">
 <div x-data="authApp()" x-init="checkAuthStatus()">
-
 <!-- Navbar that hides on small screens (hidden sm:flex) -->
 <div class="navbar bg-base-100 shadow-lg hidden sm:flex">
     <div class="navbar-start">
@@ -37,13 +38,22 @@ window.APP_CONFIG = {
             {% for page,label in [('main','Principal'),('labelling','Etiquetar textos')] %}
             <li><a {%if active_page == page%}class="menu-active"{%endif%} href="{{url_for(page)}}">{{label}}</a></li>
             {% endfor %}
+            <li>
+              <details>
+                <summary {%if active_page == 'docs'%}class="menu-active"{%endif%}>Documentos</summary>
+                <ul class="bg-base-100 rounded-t-none p-2">
+                  <li><a {%if active_page == 'docs'%}class="menu-active"{%endif%} href="{{url_for('docs')}}">Colecciones</a></li>
+                </ul>
+              </details>
+            </li>
+    
       </ul>
     </div>
     <div class="navbar-end">
         <ul class="menu menu-horizontal px-1">
-        <li >
-          <details >
-            <summary >Información</summary>
+        <li>
+          <details>
+            <summary {%if active_page == 'info'%}class="menu-active"{%endif%}>Información</summary>
             <ul class="bg-base-100 rounded-t-none p-2">
               <li><a {%if active_page == 'info'%}class="menu-active"{%endif%} href="/">Estadísticas</a></li>
             </ul>
@@ -64,7 +74,6 @@ window.APP_CONFIG = {
         </ul>
     </div>
 </div>
-
 <!-- Mobile menu button - only shows on small screens -->
 <div class="navbar bg-base-100 shadow-lg sm:hidden">
     <div class="navbar-start">
@@ -99,7 +108,6 @@ window.APP_CONFIG = {
         </button>
     </div>
 </div>
-
 <main class="fex-1 p-4">
 <!-- Login Form (shown only when not logged in) -->
 <div x-show="!isLoggedIn" class="card bg-base-100 shadow-xl mb-8">
@@ -160,7 +168,6 @@ window.APP_CONFIG = {
       </form>
   </div>
 </div>
-
 <!-- Restricted Section (shown only when logged in) -->
 <div x-show="isLoggedIn" class="restricted-section">
               
@@ -169,21 +176,16 @@ window.APP_CONFIG = {
 {% block restricted_content %}
 {% endblock %}
 </div>
-
 <!-- Admin-only section -->
 <template x-show="isAdmin">
 {% block admin_content %}{% endblock %}
 </template>
-
 </main>
 </div>
 </div>
-
 </div>
 </div>
-
 {% include "footer.html" %}
-
 <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js" integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ" crossorigin="anonymous"></script>
 <script>
 function authApp() {
@@ -199,7 +201,6 @@ function authApp() {
             username: '',
             password: ''
         },
-
         isAdmin_() {
           if(this.currentUser && this.currentUser.is_superuser){
             return true;
@@ -207,7 +208,6 @@ function authApp() {
             return false;
           }
         },
-
         async checkAuthStatus() {
           const accessToken = localStorage.getItem('access_token');
           data = await verifyToken(accessToken);
@@ -225,7 +225,6 @@ function authApp() {
             }
           }
         },
-
         handleLogin(event) {
           this.loading = false;
           const response = event.detail.xhr;
@@ -248,7 +247,6 @@ function authApp() {
               this.loginError = 'Login failed. Please try again.';
           }
         },
-
         handleLogout(event) {
           this.loading = false;
           const response = event.detail.xhr;
@@ -261,7 +259,6 @@ function authApp() {
         }
     }
 }
-
 async function verifyToken(token) {
   try {
     const response = await fetch(APP_CONFIG.urls['verify'], {
@@ -282,8 +279,6 @@ async function verifyToken(token) {
     console.error('Error fetching data:', error);
   }
 }
-
-
 // Function to refresh access token
 async function refreshAccessToken() {
   try {
@@ -308,7 +303,6 @@ async function refreshAccessToken() {
       return false;
     }
 }
-
 // Global HTMX configuration
 document.addEventListener('DOMContentLoaded', function() {
     // Add authentication headers to all HTMX requests
@@ -318,7 +312,6 @@ document.addEventListener('DOMContentLoaded', function() {
         event.detail.headers['Authorization'] = 'Bearer ' + token;
       }
     });
-
     // Handle authentication errors globally
     document.body.addEventListener('htmx:responseError', function(event) {
       if (event.detail.xhr.status === 401) {
@@ -353,9 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 });
-
 {% block script %}{% endblock %}
 </script>
-
 </body>
 </html>
