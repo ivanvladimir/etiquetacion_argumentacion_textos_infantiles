@@ -40,7 +40,12 @@ def postprocess_token_classification(predictions, tokens, id2label):
                     'label': current_label,
                 })
             current_word = token[1:]
-            current_label = label.split('-',1)[1]
+            if '_' in label:
+                current_label = label.split('_',1)[1]
+            elif "-" in label:
+                current_label = label.split('-',1)[1]
+            else:
+                current_label = label
             start_idx = idx
         else:
             current_word += token

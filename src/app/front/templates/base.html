@@ -75,40 +75,92 @@ window.APP_CONFIG = {
         </ul>
     </div>
 </div>
-<!-- Mobile menu button - only shows on small screens -->
+<!-- Mobile Menu - sm:hidden to show only on mobile -->
 <div class="navbar bg-base-100 shadow-lg sm:hidden">
-    <div class="navbar-start">
-        <div class="dropdown">
-            <div tabindex="0" role="button" class="btn btn-ghost btn-circle">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-                </svg>
-            </div>
-            <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
-              {% for page,label in [('main','Principal'),('docs','Sentencias'),('search','Búsquedas'),('graphs','Grafos')] %}
+  <div class="navbar-start flex-1">
+    <div class="dropdown dropdown-start">
+      <button class="btn btn-ghost btn-circle">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      <ul class="dropdown-content z-50 menu p-2 shadow bg-base-100 rounded-box w-64">
+        <!-- Main Pages -->
+        {% for page,label in [('main','Principal'),('labelling','Etiquetar textos')] %}
+        <li>
+          <a 
+            {% if active_page == page %}class="menu-active"{% endif %} 
+            href="{{url_for(page)}}">
+            {{label}}
+          </a>
+        </li>
+        {% endfor %}
+
+        <!-- Documents Submenu -->
+        <li>
+          <details>
+            <summary {% if active_page == 'docs' %}class="menu-active"{% endif %}>
+              Documentos
+            </summary>
+            <ul class="bg-base-100 rounded-t-none p-2">
               <li>
-              {% if active_page == page %}
-              <a class="menu-active" href="#">
-              {% else %}
-              <a href="#">
-              {% endif %}{{label}}</a></li>
-              {% endfor %}
+                <a 
+                  {% if active_menu == 'mydocs' %}class="menu-active"{% endif %} 
+                  href="{{url_for('mydocs')}}">
+                  Mis documentos
+                </a>
+              </li>
+              <li>
+                <a 
+                  {% if active_menu == 'collections' %}class="menu-active"{% endif %} 
+                  href="{{url_for('docs')}}">
+                  Colecciones
+                </a>
+              </li>
             </ul>
-        </div>
+          </details>
+        </li>
+
+        <!-- Information Submenu -->
+        <li>
+          <details>
+            <summary {% if active_page == 'info' %}class="menu-active"{% endif %}>
+              Información
+            </summary>
+            <ul class="bg-base-100 rounded-t-none p-2">
+              <li>
+                <a 
+                  {% if active_page == 'info' %}class="menu-active"{% endif %} 
+                  href="/">
+                  Estadísticas
+                </a>
+              </li>
+            </ul>
+          </details>
+        </li>
+
+        <!-- Logout Button -->
+        <li class="mt-2 border-t border-base-300 pt-2">
+          <button 
+            x-bind:disabled="isLoggedIn ? false : true"
+            class="btn btn-secondary btn-sm w-full"
+            hx-post="{{url_for('logout')}}"
+            hx-trigger="click"
+            hx-swap="none"
+            @htmx:after-request="handleLogout($event)">
+            <span x-show="!loading">Logout</span>
+            <span x-show="loading">Logging out...</span>
+          </button>
+        </li>
+      </ul>
     </div>
-    <div class="navbar-center">
-        <a class="btn btn-ghost text-xl">✍️ AATI</a>
-    </div>
-    <div class="navbar-end">
-        <button class="btn btn-ghost btn-circle">
-            <div class="indicator">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5 5-5zm-7-8h10"/>
-                </svg>
-            </div>
-        </button>
-    </div>
+
+    <!-- Mobile Logo/Title -->
+    <a class="btn btn-ghost text-xl">✍️ AATI</a>
+  </div>
 </div>
+
+
 <main class="fex-1 p-4">
 <!-- Login Form (shown only when not logged in) -->
 <div x-show="!isLoggedIn" class="card bg-base-100 shadow-xl mb-8">

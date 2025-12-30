@@ -100,6 +100,41 @@ async def api_docs(
     )
     return response
 
-   
+@router.delete("/document/{document_id}", status_code=201)#, dependencies=[Depends(rate_limiter_dependency)])
+async def api_delete_doc(
+    request: Request,
+    document_id: str,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    docsearch: Annotated[AsyncGenerator, Depends(get_meilisearch_client)],
+) -> HTMLResponse:
+    if not current_user:
+        raise ForbiddenException()
 
- 
+    doc = await docsearch.index('documents').get_document(
+        document_id,
+        fields=['name_document','id_original','created_by']
+        )
+    if not ('created_by' in doc and doc['created_by'] == current_user['id']):
+        raise ForbiddenException()
+    res = await docsearch.index('documents').delete_document(
+        document_id)
+    doc_ = await docsearch.index('documents').get_document(
+        doc['id_original'],
+        fields=['name_document','created_by']
+        )
+    if not ('created_by' in doc_ and doc_['created_by'] != current_user['id']):
+        raise ForbiddenException()
+    res = await docsearch.index('documents').delete_document(
+        doc['id_original'])
+
+    response = templates.TemplateResponse(
+        request=request,
+        name="deleted.html",
+        context={
+            'name1':doc['name_document'],
+            'name2':doc_['name_document'],
+        }
+    )
+    return response
+
+

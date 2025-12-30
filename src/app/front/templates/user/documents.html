@@ -1,7 +1,33 @@
 {% extends 'base.html' %}
 {% block title %}Documentos colección{% endblock %}
 {% block restricted_content %}
-<div class="max-w-7xl mx-auto">
+
+<div class="max-w-7xl mx-auto" x-data="deleteModal()">
+  <!-- Single Reusable Delete Modal -->
+  <dialog id="delete-modal" class="modal" @keydown.escape="closeModal()">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg">Confirmar eliminación</h3>
+      <p class="py-4">
+        ¿Está seguro de que desea eliminar el documento <strong x-text="document.name"></strong>? 
+        Esta acción no se puede deshacer.
+      </p>
+      
+      <div id="delete-indicator" class="htmx-request:flex hidden flex justify-center items-center py-4">
+        <span class="loading loading-spinner loading-md"></span>
+      </div>
+      
+      <div class="modal-action">
+        <button type="button" class="btn" @click="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn-error" @click="sendDelete()">Eliminar</button>
+      </div>
+    </div>
+    
+    <!-- Close modal when clicking outside -->
+    <form method="dialog" class="modal-backdrop">
+      <button>Cerrar</button>
+    </form>
+  </dialog>
+
   <div id="loading-indicator" class="htmx-request:flex hidden flex justify-center items-center p-4">
     <span class="loading loading-spinner loading-lg"></span>
   </div>
@@ -21,7 +47,7 @@
           <th></th>
           <th>Documento</th>
           <th>Modelo</th>
-          <th>Fragmento de texto</th>
+          <th>Fragmentos de texto</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -30,4 +56,61 @@
     </table>
   </div>
 </div>
+{% endblock %}
+
+{% block script %}
+function deleteModal() {
+  return {
+    document: {
+      id: null,
+      name: '',
+      deleteUrl: ''
+    },
+    openModal(doc) {
+      console.log('openModal called with:', doc);
+      this.document = doc;
+      document.getElementById('delete-modal').showModal();
+    },
+    closeModal() {
+      console.log('closeModal called');
+      document.getElementById('delete-modal').close();
+      this.document = { id: null, name: '', deleteUrl: '' };
+    },
+    sendDelete() {
+      console.log('sendDelete called with URL:', this.document.deleteUrl);
+      if (!this.document.deleteUrl) {
+        console.error('No delete URL found');
+        return;
+      }
+      
+      const indicator = document.getElementById('delete-indicator');
+      if (indicator) {
+        indicator.classList.remove('hidden');
+      }
+      
+      htmx.ajax('DELETE', this.document.deleteUrl, {
+        target: '#delete-modal',
+        swap: 'none',
+        onAfterRequest: (xhr) => {
+          console.log('Delete response status:', xhr.status);
+          if (xhr.status === 200) {
+            this.handleDeleteSuccess();
+          }
+        }
+      });
+    },
+    handleDeleteSuccess() {
+      console.log('handleDeleteSuccess called');
+      this.closeModal();
+      // Remove the document row from the table
+      const rows = document.querySelectorAll('#table-documents tr');
+      rows.forEach(row => {
+        const btn = row.querySelector(`button[data-doc-id="${this.document.id}"]`);
+        if (btn) {
+          row.remove();
+        }
+      });
+    }
+  }
+}
 {% endblock %}
