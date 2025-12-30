@@ -39,10 +39,11 @@ window.APP_CONFIG = {
             <li><a {%if active_page == page%}class="menu-active"{%endif%} href="{{url_for(page)}}">{{label}}</a></li>
             {% endfor %}
             <li>
-              <details>
+              <details class="dropdown z-50">
                 <summary {%if active_page == 'docs'%}class="menu-active"{%endif%}>Documentos</summary>
                 <ul class="bg-base-100 rounded-t-none p-2">
-                  <li><a {%if active_page == 'docs'%}class="menu-active"{%endif%} href="{{url_for('docs')}}">Colecciones</a></li>
+                  <li><a {%if active_menu == 'mydocs'%}class="menu-active"{%endif%} href="{{url_for('mydocs')}}">Mis documentos</a></li>
+                  <li><a {%if active_menu == 'collections'%}class="menu-active"{%endif%} href="{{url_for('docs')}}">Colecciones</a></li>
                 </ul>
               </details>
             </li>
@@ -335,10 +336,11 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         // Handle other errors (non-401)
         const errorArea = document.getElementById('error-message');
+        const errorMessage = JSON.parse(event.detail.xhr.response);
         if (errorArea) {
           errorArea.innerHTML = `
             <div class="alert alert-error">
-              <span>Error (${event.detail.xhr.status}): Sin permisos necesarios para cargar el recurso.</span>
+              <span>Error (${event.detail.xhr.status}): ${errorMessage.detail}.</span>
             </div>
           `;
           errorArea.hidden=false;

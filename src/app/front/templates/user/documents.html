@@ -6,9 +6,12 @@
     <span class="loading loading-spinner loading-lg"></span>
   </div>
 
+  <div id="error-message" class="card bg-base-100 shadow-lg p-4 md:p-4 leading-relaxed" hidden>
+  </div>
+
   <div id="data-table" class="overflow-auto"
-    hx-trigger="load"
-    hx-get="{{url_for('api_docs')}}"
+    hx-trigger="load delay:100ms"
+    hx-get="{{url_for('api_docs')}}?scope={{scope}}"
     hx-target="#table-documents"
     hx-indicator="#loading-indicator"
     hx-swap="innerHTML">
@@ -18,6 +21,7 @@
           <th></th>
           <th>Documento</th>
           <th>Modelo</th>
+          <th>Fragmento de texto</th>
           <th>Acciones</th>
         </tr>
       </thead>

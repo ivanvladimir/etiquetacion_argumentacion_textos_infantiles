@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 
 from typing import Annotated, Any, cast, AsyncGenerator
 
@@ -23,6 +24,7 @@ from ...schemas.task import TaskCreate, TaskCreateInternal, TaskRead, TaskStatus
 templates = Jinja2Templates(directory="src/app/api/v1/templates")
 
 router = APIRouter(tags=["documents"])
+
 
 @router.post("/document/{document_id}", status_code=201)#, dependencies=[Depends(rate_limiter_dependency)])
 async def api_document(
@@ -55,24 +57,44 @@ async def api_document(
 async def api_docs(
     request: Request,
     docsearch: Annotated[AsyncGenerator, Depends(get_meilisearch_client)],
+    current_user: Annotated[dict, Depends(get_current_user)],
+    scope: str = 'collection',
     page: int = 0,
     page_size: int = 30,
 ) -> HTMLResponse:
+    if not current_user:
+        raise ForbiddenException()
+
+    if scope == 'collection':
+        filter= "(type = 'manual' OR type = 'labelled') AND created_by NOT EXISTS"
+    else:
+        filter= f"(type = 'manual' OR type = 'labelled') AND created_by = {current_user['id']}"
+
     docs = await docsearch.index('documents').get_documents(
-        fields=['id','name_document','model'],
-        filter= "(type = 'manual' OR type = 'labelled') AND created_by NOT EXISTS",
+        fields=['id','name_document','model','type','text'],
+        filter=filter,
         offset=page*page_size,
         limit=page_size
         )
-    print(docs)
+
+    if docs.total == 0:
+        raise NotFoundException("No documents found for current user.")
+
+    re_remove_tags=re.compile(r'<[^>]+>')
+    documents=[]
+    for ele in docs.results:
+        t=re_remove_tags.sub('', ele['text'])
+        ele['text']= t[:100] + "..." if len(t) > 100 else t
+        documents.append(ele)
 
     response = templates.TemplateResponse(
         request=request,
         name="documents.html",
         context={
-            'documents':docs.results,
+            'documents':documents,
             'offset':page*page_size,
             'page':page,
+            'scope':scope,
             'last_page': ((page + 1) * page_size + 1) > docs.total,
         }
     )

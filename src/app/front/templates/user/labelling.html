@@ -3,7 +3,7 @@
 {% block title %}Etiquetar un texto{% endblock %}
 
 {% block restricted_content %}
-<div class="max-w-4xl mx-auto" x-data="textHandler()" x-init="window.textHandlerInstance = $data">
+<div class="max-w-7xl mx-auto" x-data="textHandler()" x-init="window.textHandlerInstance = $data">
   <!-- Header -->
   <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
       <h1 class="text-4xl font-bold text-gray-800 mb-2">Analiza un texto</h1>
@@ -106,7 +106,6 @@
 
 {% endblock %}
 {% block script %}
-<script>
 function textHandler() {
   return {
       text: '',
@@ -271,5 +270,4 @@ function textHandler() {
       },
   }
 }
-</script>
 {% endblock %}

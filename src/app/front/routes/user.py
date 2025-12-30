@@ -29,7 +29,7 @@ async def labelling(request: Request) -> HTMLResponse:
 async def docs(
     request: Request) -> HTMLResponse:
     """
-    Shows a document
+    Shows a documents that are open to all users
     """
     start_time = time.time()
     response = templates.TemplateResponse(
@@ -37,10 +37,33 @@ async def docs(
         name="user/documents.html",
         context={
             "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
-            "active_page":'docs'
+            "scope":"collection",
+            "active_page":'docs',
+            "active_menu":'collections'
         },
     )
     return response
+
+@router.get("/mydocuments/")
+async def mydocs(
+    request: Request) -> HTMLResponse:
+    """
+    Shows a document that belong to the user
+    """
+    start_time = time.time()
+    response = templates.TemplateResponse(
+        request=request,
+        name="user/documents.html",
+        context={
+            "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
+            "scope":"mydocs",
+            "active_page":'docs',
+            "active_menu":'mydocs'
+        },
+    )
+    return response
+
+
 
 @router.get("/document/{document_id}")
 async def doc(
