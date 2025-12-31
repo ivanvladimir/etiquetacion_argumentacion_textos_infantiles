@@ -1,7 +1,5 @@
 {% extends 'base.html' %}
-
 {% block title %}Etiquetar un texto{% endblock %}
-
 {% block restricted_content %}
 <div class="max-w-7xl mx-auto" x-data="textHandler()" x-init="window.textHandlerInstance = $data">
   <!-- Header -->
@@ -71,18 +69,8 @@
               </button>
           </div>
       </div>
-      <!-- Hidden form for HTMX -->
-      <form 
-          id="analysisForm"
-          @submit.prevent="submitForm($event)"
-          style="display: none;"
-      >
-          <input type="hidden" name="text" :value="text">
-          <input type="hidden" name="filename" :value="fileName">
-      </form>
   </div>
 </div>
-
 <!-- Tasks Table -->
 <div class="card bg-base-100 shadow-xl max-w-7xl mx-auto">
   <div class="card-body">
@@ -103,7 +91,6 @@
       </div>
   </div>
 </div>
-
 {% endblock %}
 {% block script %}
 function textHandler() {
@@ -143,6 +130,7 @@ function textHandler() {
               this.fileName = 'Texto pegado';
           }
       },
+      
       clearText() {
             this.text = '';
             this.fileName = '';
@@ -155,33 +143,32 @@ function textHandler() {
         }
         
         this.isAnalyzing = true;
-        const form = document.getElementById('analysisForm');
-        htmx.trigger(form, 'submit');
+        this.submitForm();
       },
-
-      submitForm(event) {
+      
+      submitForm() {
           console.log('Form submitted');
           
           const formData = new FormData();
           formData.set('text', this.text);
           formData.set('filename', this.fileName);
           
-          fetch("{{url_for('analyze_text')}}", {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${localStorage.access_token}`},
-              credentials: 'include',
-              body: formData
+          htmx.ajax('POST', "{{url_for('analyze_text')}}", {
+              source: document.body,
+              target: '#table-tasks',
+              swap: 'beforeend',
+              values: {
+                  text: this.text,
+                  filename: this.fileName
+              }
           })
-          .then(response => response.text())
-          .then(html => {
+          .then(response => {
               console.log('Received response for new task');
-              // Insert into table
-              const tbody = document.getElementById('table-tasks');
-              tbody.insertAdjacentHTML('afterbegin', html);
               
-              // Get task ID and start polling
+              // Get task ID from the newly inserted row
+              const tbody = document.getElementById('table-tasks');
               const newRow = tbody.querySelector('tr:first-child');
+              
               if (newRow && newRow.dataset.taskId) {
                   const taskId = newRow.dataset.taskId;
                   this.startPollingForTask(taskId);
@@ -198,45 +185,40 @@ function textHandler() {
               alert('Error al iniciar el análisis');
           });
       },
-
+      
       startPollingForTask(taskId) {
-          // Store the polling interval for this task
-          const pollUrl = `{{url_for('task_status')}}/${taskId}`;
           console.log("Checking status for task:", taskId);
           
+          const pollUrl = `{{url_for('task_status')}}/${taskId}`;
+          
           const checkStatus = () => {
-              fetch(pollUrl, {
-                  method: 'GET',
-                  headers: {
-                    'Authorization': `Bearer ${localStorage.access_token}`},
-                  credentials: 'include',
+              htmx.ajax('GET', pollUrl, {
+                  source: document.body,
+                  target: `[data-task-id="${taskId}"]`,
+                  swap: 'outerHTML',
               })
-                  .then(response => response.text())
-                  .then(html => {
-                      // Find the row for this task and update it
-                      const row = document.querySelector(`[data-task-id="${taskId}"]`);
-                      if (row) {
-                          // Replace the entire row with the new HTML
-                          row.outerHTML = html;
-                          
-                          // Check if task is complete
-                          if (html.includes('terminada') || html.includes('faltante') || 
-                              html.includes('Completado') || html.includes('Error')) {
-                              // Stop polling for this task
-                              if (this.activeTasks[taskId]) {
-                                  clearInterval(this.activeTasks[taskId]);
-                                  delete this.activeTasks[taskId];
-                              }
-                          }
-                      }
-                  })
-                  .catch(error => {
-                      console.error('Error checking status:', error);
+              .then(() => {
+                  // Check if task is complete
+                  const row = document.querySelector(`[data-task-id="${taskId}"]`);
+                  
+                  if (row && (row.innerHTML.includes('terminada') || 
+                              row.innerHTML.includes('faltante') || 
+                              row.innerHTML.includes('Completado') || 
+                              row.innerHTML.includes('Error'))) {
+                      // Stop polling for this task
                       if (this.activeTasks[taskId]) {
                           clearInterval(this.activeTasks[taskId]);
                           delete this.activeTasks[taskId];
                       }
-                  });
+                  }
+              })
+              .catch(error => {
+                  console.error('Error checking status:', error);
+                  if (this.activeTasks[taskId]) {
+                      clearInterval(this.activeTasks[taskId]);
+                      delete this.activeTasks[taskId];
+                  }
+              });
           };
           
           // Check immediately
@@ -246,21 +228,21 @@ function textHandler() {
           const intervalId = setInterval(checkStatus, 1000);
           this.activeTasks[taskId] = intervalId;
       },
-
+      
       stopPollingForTask(taskId) {
           if (this.activeTasks[taskId]) {
               clearInterval(this.activeTasks[taskId]);
               delete this.activeTasks[taskId];
           }
       },
-
+      
       stopAllPolling() {
           Object.keys(this.activeTasks).forEach(taskId => {
               clearInterval(this.activeTasks[taskId]);
           });
           this.activeTasks = {};
       },
-
+      
       deleteTask(taskId) {
           this.stopPollingForTask(taskId);
           const row = document.querySelector(`[data-task-id="${taskId}"]`);

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from typing import Annotated, Any, cast, AsyncGenerator
 
-from fastapi import APIRouter, Depends, Request, Form
+from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,6 +40,7 @@ async def analyze_text(
     if queue.pool is None:
         raise HTTPException(status_code=503, detail="No exíste cola de trabajos")
 
+    job = None
     if text:
         document_name=f"{sanitize_filename(text[:30]).replace(' ','_')}"
         document_id=uuid.uuid4().hex
@@ -57,6 +58,10 @@ async def analyze_text(
             text, 
             task=task_created.id,
             user=current_user['id'])
+
+        if job is None:
+            raise HTTPException(status_code=500, detail="Failed to create task")
+
         job_status = str(await job.status())
 
         values_update = TaskUpdate(**{'task_id':job.job_id})
@@ -70,9 +75,6 @@ async def analyze_text(
                     'created_by': current_user['id'],
                     'created_at': datetime.now().isoformat()
                 }])
-
-    if job is None:
-        raise HTTPException(status_code=500, detail="Failed to create task")
 
     job_info = await job.info()
 
