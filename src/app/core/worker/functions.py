@@ -85,9 +85,12 @@ async def predict_task(ctx: Worker, model_name: str, document_id: str, document_
             'created_by': user,
             'created_at': datetime.now().isoformat()
         }])
+        await docsearch.index("documents").update_documents([{
+            'id':document_id,
+            'id_labelled':document_id_}])
 
         #Update state in db
-        values_update = TaskUpdate(**{'status':TaskStatus.FINISHED})
+        values_update = TaskUpdate(**{'status':TaskStatus.FINISHED,'document_id':document_id_})
         async with db_session() as db:
             await crud_tasks.update(db=db, object=values_update.model_dump(exclude_unset=True), id=task)
 

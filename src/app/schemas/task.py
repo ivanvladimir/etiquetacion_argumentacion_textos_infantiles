@@ -34,8 +34,8 @@ class TimestampTaskSchema(BaseModel):
 
 class TaskBase(BaseModel):
     name: Annotated[str, Field(min_length=2, max_length=500, examples=["Nombre de la tarea"])]
-    document_id: Annotated[str, Field( min_length=12, max_length=36, description="Hash ID del document")]
-    task_id: Annotated[str | None, Field( min_length=12, max_length=36, description="Hash ID del document", default=None)]
+    document_id: Annotated[str, Field( min_length=12, max_length=36, description="Hash ID of document")]
+    task_id: Annotated[str | None, Field( min_length=12, max_length=36, description="Hash ID of task", default=None)]
     status: Annotated[TaskStatus, Field(default=TaskStatus.STARTING)]
 
 class Task(TimestampTaskSchema, TaskBase,PersistentDeletion):
@@ -45,7 +45,7 @@ class TaskRead(BaseModel):
     id: int
     name: Annotated[str, Field(min_length=2, max_length=500, examples=["Esta es mi tarea"])]
     status: Annotated[TaskStatus, Field(default=TaskStatus.STARTING)]
-    task_id: Annotated[str | None, Field( min_length=12, max_length=36, description="Hash ID del document", default=None)]
+    task_id: Annotated[str | None, Field( min_length=12, max_length=36, description="Hash ID of task", default=None)]
     created_by_user_id: int
 
     started_at: Optional[datetime] = None
@@ -66,8 +66,8 @@ class TaskUpdate(BaseModel):
 
     name: Annotated[str | None, Field(min_length=2, max_length=500, examples=["Esta es mi tarea"], default=None)]
     status: Annotated[TaskStatus | None, Field(default=TaskStatus.STARTING)]
-    task_id: Annotated[str | None, Field( min_length=12, max_length=36, description="Hash ID del document", default=None)]
-
+    task_id: Annotated[str | None, Field( min_length=12, max_length=36, description="Hash ID of task", default=None)]
+    document_id: Annotated[str | None, Field( min_length=12, max_length=36, description="Hash ID of document", default=None)]
 
 class TaskUpdateInternal(TaskUpdate):
     updated_at: datetime
