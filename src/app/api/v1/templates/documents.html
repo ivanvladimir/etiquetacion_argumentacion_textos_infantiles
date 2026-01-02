@@ -22,7 +22,7 @@
              
               {% if scope == 'mydocs' %}
               <!-- Delete Document Button (opens modal) -->
-              <button 
+              <button data-doc-id="{{doc.id}}"
                 @click="openModal({
                   id: '{{doc.id}}',
                   name: '{{doc.name_document}}',

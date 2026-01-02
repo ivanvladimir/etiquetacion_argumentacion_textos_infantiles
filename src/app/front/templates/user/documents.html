@@ -67,49 +67,60 @@ function deleteModal() {
       deleteUrl: ''
     },
     openModal(doc) {
-      console.log('openModal called with:', doc);
       this.document = doc;
       document.getElementById('delete-modal').showModal();
     },
     closeModal() {
-      console.log('closeModal called');
       document.getElementById('delete-modal').close();
       this.document = { id: null, name: '', deleteUrl: '' };
     },
     sendDelete() {
-      console.log('sendDelete called with URL:', this.document.deleteUrl);
       if (!this.document.deleteUrl) {
-        console.error('No delete URL found');
         return;
       }
       
       const indicator = document.getElementById('delete-indicator');
+      const modal = document.getElementById('delete-modal');
+      
       if (indicator) {
         indicator.classList.remove('hidden');
       }
       
+      // Use htmx.on() on document for HTMX 2.0.7 compatibility with htmx.ajax()
+      const handleCompletion = (e) => {
+        if (indicator) {
+          indicator.classList.add('hidden');
+        }
+        
+        if (e.detail.xhr.status === 200) {
+          this.handleDeleteSuccess();
+        }
+        
+        // Remove listener after handling
+        htmx.off(document, 'htmx:afterRequest', handleCompletion);
+      };
+      
+      htmx.on(document, 'htmx:afterRequest', handleCompletion);
+      
       htmx.ajax('DELETE', this.document.deleteUrl, {
         target: '#delete-modal',
-        swap: 'none',
-        onAfterRequest: (xhr) => {
-          console.log('Delete response status:', xhr.status);
-          if (xhr.status === 200) {
-            this.handleDeleteSuccess();
-          }
-        }
+        swap: 'none'
       });
     },
     handleDeleteSuccess() {
-      console.log('handleDeleteSuccess called');
-      this.closeModal();
+      // Save the ID before closing the modal (which clears this.document)
+      const docId = this.document.id;
+      
       // Remove the document row from the table
       const rows = document.querySelectorAll('#table-documents tr');
       rows.forEach(row => {
-        const btn = row.querySelector(`button[data-doc-id="${this.document.id}"]`);
+        const btn = row.querySelector(`button[data-doc-id="${docId}"]`);
         if (btn) {
           row.remove();
         }
       });
+      
+      this.closeModal();
     }
   }
 }

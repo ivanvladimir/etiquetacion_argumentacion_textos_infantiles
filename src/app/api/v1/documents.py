@@ -105,7 +105,7 @@ async def api_delete_doc(
     request: Request,
     document_id: str,
     current_user: Annotated[dict, Depends(get_current_user)],
-    docsearch: Annotated[AsyncGenerator, Depends(get_meilisearch_client)],
+    docsearch: Annotated[AsyncGenerator, Depends(get_meilisearch_client)]
 ) -> HTMLResponse:
     if not current_user:
         raise ForbiddenException()
@@ -122,7 +122,7 @@ async def api_delete_doc(
         doc['id_original'],
         fields=['name_document','created_by']
         )
-    if not ('created_by' in doc_ and doc_['created_by'] != current_user['id']):
+    if not ('created_by' in doc_ and doc_['created_by'] == current_user['id']):
         raise ForbiddenException()
     res = await docsearch.index('documents').delete_document(
         doc['id_original'])
