@@ -72,7 +72,7 @@
   </div>
 </div>
 <!-- Tasks Table -->
-<div class="card bg-base-100 shadow-xl max-w-7xl mx-auto">
+<div class="card bg-base-100 shadow-xl max-w-7xl mx-auto" x-data="deleteModal()">
   <div class="card-body">
       <h2 class="card-title mb-4">Solicitudes de análsis</h2>
       <div class="overflow-x-auto">
@@ -90,7 +90,31 @@
           </table>
       </div>
   </div>
+  <!-- Single Reusable Delete Modal -->
+  <dialog id="delete-modal" class="modal" @keydown.escape="closeModal()">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg">Confirmar eliminación</h3>
+      <p class="py-4">
+        ¿Está seguro de que desea eliminar el documento <strong x-text="document.name"></strong>? 
+        Esta acción no se puede deshacer.
+      </p>
+      
+      <div id="delete-indicator" class="htmx-request:flex hidden flex justify-center items-center py-4">
+        <span class="loading loading-spinner loading-md"></span>
+      </div>
+      
+      <div class="modal-action">
+        <button type="button" class="btn" @click="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn-error" @click="sendDelete()">Eliminar</button>
+      </div>
+    </div>
 </div>
+  
+  <!-- Close modal when clicking outside -->
+  <form method="dialog" class="modal-backdrop">
+    <button>Cerrar</button>
+  </form>
+</dialog>
 {% endblock %}
 {% block script %}
 function textHandler() {
@@ -250,6 +274,72 @@ function textHandler() {
               row.remove();
           }
       },
+  }
+}
+
+function deleteModal() {
+  return {
+    document: {
+      id: null,
+      name: '',
+      deleteUrl: ''
+    },
+    openModal(doc) {
+      this.document = doc;
+      document.getElementById('delete-modal').showModal();
+    },
+    closeModal() {
+      document.getElementById('delete-modal').close();
+      this.document = { id: null, name: '', deleteUrl: '' };
+    },
+    sendDelete() {
+      if (!this.document.deleteUrl) {
+        return;
+      }
+      
+      const indicator = document.getElementById('delete-indicator');
+      const modal = document.getElementById('delete-modal');
+      
+      if (indicator) {
+        indicator.classList.remove('hidden');
+      }
+      
+      // Use htmx.on() on document for HTMX 2.0.7 compatibility with htmx.ajax()
+      const handleCompletion = (e) => {
+        if (indicator) {
+          indicator.classList.add('hidden');
+        }
+        
+        if (e.detail.xhr.status === 200) {
+          this.handleDeleteSuccess();
+        }
+        
+        // Remove listener after handling
+        htmx.off(document, 'htmx:afterRequest', handleCompletion);
+      };
+      
+      htmx.on(document, 'htmx:afterRequest', handleCompletion);
+      
+      htmx.ajax('DELETE', this.document.deleteUrl, {
+        target: '#delete-modal',
+        swap: 'none'
+      });
+    },
+    handleDeleteSuccess() {
+      // Save the ID before closing the modal (which clears this.document)
+      const docId = this.document.id;
+      
+      // Remove the document row from the table
+      const rows = document.querySelectorAll('#table-tasks tr');
+      rows.forEach(row => {
+        const btn = row.querySelector(`button[data-doc-id="${docId}"]`);
+        if (btn) {
+          row.remove();
+        }
+      });
+      
+      this.closeModal();
+    }
   }
 }
 {% endblock %}

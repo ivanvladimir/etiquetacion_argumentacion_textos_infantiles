@@ -44,6 +44,7 @@ async def analyze_text(
     if text:
         document_name=f"{sanitize_filename(text[:30]).replace(' ','_')}"
         document_id=uuid.uuid4().hex
+        document_id_=uuid.uuid4().hex
         task_internal = TaskCreateInternal(**{
             "created_by_user_id": current_user['id'],
             "name":document_name,
@@ -54,7 +55,7 @@ async def analyze_text(
         job = await queue.pool.enqueue_job(
             "predict_task", 
             "infantiles-argumentation-xlm-roberta", 
-            document_id, document_name, 
+            document_id, document_id_, document_name, 
             text, 
             task=task_created.id,
             user=current_user['id'])
@@ -69,6 +70,7 @@ async def analyze_text(
 
         await docsearch.index("documents").add_documents([{
                     'id': document_id,
+                    'id_labelled': document_id_,
                     'text':text,
                     'name_document':document_name,
                     'type':'original',

@@ -39,6 +39,7 @@ async def task_status(
     job_info = await job.info()
     if job_info is None:
         return None
+    print(job_info.__dict__)
 
     response = templates.TemplateResponse(
         request=request,

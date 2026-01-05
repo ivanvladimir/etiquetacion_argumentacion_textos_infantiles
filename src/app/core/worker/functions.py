@@ -29,7 +29,15 @@ async def sample_background_task(ctx: Worker, name: str) -> str:
     await asyncio.sleep(5)
     return f"Task {name} is complete!"
 
-async def predict_task(ctx: Worker, model_name: str, document_id: str, document_name: str, text: str, task: int, user: int) -> dict:
+async def predict_task(
+        ctx: Worker, 
+        model_name: str, 
+        document_id: str, 
+        document_id_: str, 
+        document_name: str, 
+        text: str, 
+        task: int, 
+        user: int) -> dict:
     """Token classification prediction task"""
     cache = ctx["model_cache"]
    
@@ -65,7 +73,7 @@ async def predict_task(ctx: Worker, model_name: str, document_id: str, document_
 
         result = {
             "model": model_name,
-            "document_id": document_id,
+            "document_id": document_id_,
             "document_name": document_name,
             "text_spans": html_simple,
             "status": "success"
@@ -73,7 +81,6 @@ async def predict_task(ctx: Worker, model_name: str, document_id: str, document_
         
         logger.info(f"Prediction complete for {model_name}")
 
-        document_id_=uuid.uuid4().hex
         await docsearch.index("documents").add_documents([{
             'id': document_id_,
             'id_original':document_id,
@@ -85,9 +92,6 @@ async def predict_task(ctx: Worker, model_name: str, document_id: str, document_
             'created_by': user,
             'created_at': datetime.now().isoformat()
         }])
-        await docsearch.index("documents").update_documents([{
-            'id':document_id,
-            'id_labelled':document_id_}])
 
         #Update state in db
         values_update = TaskUpdate(**{'status':TaskStatus.FINISHED,'document_id':document_id_})
