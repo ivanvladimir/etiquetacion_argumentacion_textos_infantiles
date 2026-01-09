@@ -9,6 +9,7 @@
     <td>{{offset+loop.index}}</td>
     <td><a href="{{url_for('doc',document_id=doc.id)}}">{{doc.name_document}} </a></td>
     <td>{{ "🧑" if doc.type== "manual" else "🤖"  }}{{doc.model}} </td>
+    <td>{{doc.created_at | naturaltime }}</td>
     <td>{{doc.text}}</td>
     <td>
       <div class="flex gap-2">

@@ -20,8 +20,11 @@ from ...core.db.database import async_get_db
 from ...core.db.docsearch import async_get_docsearch, get_meilisearch_client
 from ...schemas.job import Job
 from ...schemas.task import TaskCreate, TaskCreateInternal, TaskRead, TaskStatus, TaskUpdate
+from ...core.utils.template_filters import naturaltime
+
 
 templates = Jinja2Templates(directory="src/app/api/v1/templates")
+templates.env.filters["naturaltime"] = naturaltime
 
 router = APIRouter(tags=["documents"])
 
@@ -71,8 +74,9 @@ async def api_docs(
         filter= f"(type = 'manual' OR type = 'labelled') AND created_by = {current_user['id']}"
 
     docs = await docsearch.index('documents').get_documents(
-        fields=['id','name_document','model','type','text'],
+        fields=['id','name_document','model','type','text','created_at'],
         filter=filter,
+        sort= ["created_at:desc"],
         offset=page*page_size,
         limit=page_size
         )

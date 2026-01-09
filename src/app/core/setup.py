@@ -21,6 +21,7 @@ from fastapi_tailwind import tailwind
 from ..api.dependencies import get_current_superuser
 from ..core.utils.rate_limit import rate_limiter
 from ..middleware.client_cache_middleware import ClientCacheMiddleware
+from ..middleware.file_size_limit_middleware import FileSizeLimitMiddleware
 from ..models import *  # noqa: F403
 from .config import (
     AppSettings,
@@ -33,6 +34,7 @@ from .config import (
     RedisRateLimiterSettings,
     CORSSettings,
     MLModelsSettings,
+    FileSettings,
     settings,
 )
 from .db.database import Base
@@ -248,6 +250,9 @@ def create_application(
 
     if isinstance(settings, ClientSideCacheSettings):
         application.add_middleware(ClientCacheMiddleware, max_age=settings.CLIENT_CACHE_MAX_AGE)
+
+    if isinstance(settings, FileSettings):
+        application.add_middleware(FileSizeLimitMiddleware, max_file_size=settings.MAX_FILE_SIZE)
 
     if isinstance(settings, EnvironmentSettings):
         if settings.ENVIRONMENT != EnvironmentOption.PRODUCTION:

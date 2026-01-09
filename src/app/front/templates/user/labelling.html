@@ -2,25 +2,33 @@
 {% block title %}Etiquetar un texto{% endblock %}
 {% block restricted_content %}
 <div class="max-w-7xl mx-auto" x-data="textHandler()" x-init="window.textHandlerInstance = $data">
+  <!-- Error Message Area -->
+  <div id="error-message" class="card bg-red-50 border-2 border-red-300 shadow-lg p-4 md:p-4 leading-relaxed mb-6" hidden>
+      <div class="text-red-800 font-semibold" x-text="errorMessage"></div>
+  </div>
+  
   <!-- Header -->
   <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
       <h1 class="text-4xl font-bold text-gray-800 mb-2">Analiza un texto</h1>
       <p class="text-gray-600">Sube un archivo, arrastralo o pegalo</p>
   </div>
+  
   <!-- Input Methods -->
   <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
       <div class="space-y-6">
+          <!-- File Upload Button -->
           <!-- File Upload Button -->
           <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">Sube archivo desde tu equipo</label>
               <input 
                   type="file" 
-                  accept=".txt,text/plain"
+                  accept=".txt,.pdf,.docx,.doc,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
                   @change="handleFiles($event.target.files)"
                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:cursor-pointer cursor-pointer"
               >
           </div>
-          <!-- Drag & Drop Zone -->
+          
+          <!-- // Drag & Drop Zone -->
           <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">Arrastra y soltar</label>
               <div 
@@ -33,10 +41,11 @@
                   <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                   </svg>
-                  <p class="text-lg font-medium text-gray-700">Suelta tu texto aquí</p>
-                  <p class="text-sm text-gray-500 mt-1">Archivos tipo: .txt o .docx</p>
+                  <p class="text-lg font-medium text-gray-700">Suelta tu archivo aquí</p>
+                  <p class="text-sm text-gray-500 mt-1">Archivos tipo: .txt, .pdf, .docx</p>
               </div>
           </div>
+          
           <!-- Paste Area -->
           <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">O pega el texto aquí</label>
@@ -71,6 +80,22 @@
       </div>
   </div>
 </div>
+
+
+<!-- File History -->
+<div class="bg-white rounded-2xl shadow-xl p-8 mb-6 max-w-7xl mx-auto" x-show="fileHistory.length > 0" x-data="textHandler()">
+    <h3 class="text-xl font-bold text-gray-800 mb-4">Historial de archivos</h3>
+    <div class="flex flex-wrap gap-2">
+        <template x-for="file in fileHistory" :key="file.name">
+            <button 
+                @click="selectFromHistory(file)"
+                class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors font-medium text-sm"
+                x-text="file.name"
+            ></button>
+        </template>
+    </div>
+</div>
+
 <!-- Tasks Table -->
 <div class="card bg-base-100 shadow-xl max-w-7xl mx-auto" x-data="deleteModal()">
   <div class="card-body">
@@ -79,8 +104,10 @@
           <table class="table w-full">
               <thead>
                   <tr class="bg-base-200">
-                      <th>Nombre de tarea</th>
+                      <th>Nombre de documento</th>
                       <th>Estado</th>
+                      <th>Inicio de tarea</th>
+                      <th>Fin de tarea</th>
                       <th>Acciones</th>
                   </tr>
               </thead>
@@ -90,6 +117,7 @@
           </table>
       </div>
   </div>
+  
   <!-- Single Reusable Delete Modal -->
   <dialog id="delete-modal" class="modal" @keydown.escape="closeModal()">
     <div class="modal-box">
@@ -108,7 +136,7 @@
         <button type="button" class="btn btn-error" @click="sendDelete()">Eliminar</button>
       </div>
     </div>
-</div>
+  </dialog>
   
   <!-- Close modal when clicking outside -->
   <form method="dialog" class="modal-backdrop">
@@ -116,6 +144,7 @@
   </form>
 </dialog>
 {% endblock %}
+
 {% block script %}
 function textHandler() {
   return {
@@ -123,23 +152,68 @@ function textHandler() {
       isDragging: false,
       fileName: '',
       isAnalyzing: false,
-      activeTasks: {}, // Track active tasks and their polling intervals
+      selectedFile: null,
+      errorMessage: '',
+      activeTasks: {},
+      fileHistory: [],
+      
+      showError(message) {
+          this.errorMessage = message;
+          const errorDiv = document.getElementById('error-message');
+          if (errorDiv) {
+              errorDiv.removeAttribute('hidden');
+              setTimeout(() => {
+                  errorDiv.setAttribute('hidden', '');
+              }, 5000);
+          }
+      },
+      
+      hideError() {
+          this.errorMessage = '';
+          const errorDiv = document.getElementById('error-message');
+          if (errorDiv) {
+              errorDiv.setAttribute('hidden', '');
+          }
+      },
       
       handleFiles(files) {
           if (files.length === 0) return;
           const file = files[0];
           
-          if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
-              this.fileName = file.name;
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                  this.text = e.target.result;
-                  this.startAnalysis();
-              };
-              reader.readAsText(file);
+          const supportedTypes = ['text/plain', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+          const supportedExtensions = ['.txt', '.pdf', '.docx', '.doc'];
+          
+          const isSupported = supportedTypes.includes(file.type) || 
+                            supportedExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+          
+          if (isSupported) {
+              this.$nextTick(() => {
+                  this.fileName = file.name;
+                  this.selectedFile = file;
+                  this.hideError();
+                  this.addToHistory(file);
+              });
           } else {
-              alert('Subir un archivo de texto (.txt)');
+              this.showError('Por favor sube un archivo soportado (.txt, .pdf, .docx, .doc)');
           }
+      },
+      
+      addToHistory(file) {
+          // Check if file already exists in history
+          const exists = this.fileHistory.some(f => f.name === file.name && f.size === file.size);
+          if (!exists) {
+              this.fileHistory.unshift({ name: file.name, file: file, size: file.size });
+              // Keep only last 10 files
+              if (this.fileHistory.length > 10) {
+                  this.fileHistory.pop();
+              }
+          }
+      },
+      
+      selectFromHistory(historyItem) {
+          this.fileName = historyItem.name;
+          this.selectedFile = historyItem.file;
+          this.hideError();
       },
       
       handleDrop(e) {
@@ -152,66 +226,115 @@ function textHandler() {
           if (pastedText) {
               this.text = pastedText;
               this.fileName = 'Texto pegado';
+              this.selectedFile = null;
           }
       },
       
       clearText() {
             this.text = '';
             this.fileName = '';
+            this.selectedFile = null;
       },
       
       startAnalysis() {
-        if (this.text.trim().length === 0) {
-            alert('Por favor ingresa un texto para analizar');
+        const fileInput = document.querySelector('input[type="file"]');
+        const hasFile = this.selectedFile || (fileInput && fileInput.files && fileInput.files.length > 0);
+        
+        if (!hasFile && this.text.trim().length === 0) {
+            this.showError('Por favor sube un archivo o ingresa un texto para analizar');
             return;
         }
         
+        if (!this.selectedFile && fileInput && fileInput.files && fileInput.files.length > 0) {
+            this.selectedFile = fileInput.files[0];
+            this.fileName = this.selectedFile.name;
+        }
+        
+        this.hideError();
         this.isAnalyzing = true;
         this.submitForm();
       },
       
-      submitForm() {
-          console.log('Form submitted');
+      async submitForm() {
+          const self = this;
           
-          const formData = new FormData();
-          formData.set('text', this.text);
-          formData.set('filename', this.fileName);
-          
-          htmx.ajax('POST', "{{url_for('analyze_text')}}", {
-              source: document.body,
-              target: '#table-tasks',
-              swap: 'beforeend',
-              values: {
-                  text: this.text,
-                  filename: this.fileName
+          try {
+              if (self.selectedFile) {
+                  const formData = new FormData();
+                  formData.append('file', self.selectedFile);
+                  
+                  const headers = {};
+                  const token = localStorage.access_token;
+                  if (token) {
+                      headers['Authorization'] = 'Bearer ' + token;
+                  }
+                  
+                  const response = await fetch("{{url_for('analyze_text')}}", {
+                      method: 'POST',
+                      body: formData,
+                      headers: headers,
+                      credentials: 'include'
+                  });
+                  
+                  if (response.status === 401) {
+                      const success = await refreshAccessToken();
+                      if (success) {
+                          return self.submitForm();
+                      } else {
+                          logout();
+                          throw new Error('Authentication failed');
+                      }
+                  }
+                  
+                  if (!response.ok) {
+                      throw new Error(`HTTP ${response.status}`);
+                  }
+                  
+                  const html = await response.text();
+                  
+                  const tbody = document.getElementById('table-tasks');
+                  tbody.insertAdjacentHTML('afterbegin', html);
+                  
+                  const newRow = tbody.querySelector('tr:first-child');
+                  if (newRow && newRow.dataset.taskId) {
+                      self.startPollingForTask(newRow.dataset.taskId);
+                  }
+              } else {
+                  console.log('Submitting text via HTMX');
+                  const form = document.getElementById('analyze-form');
+                  document.getElementById('form-text').value = self.text;
+                  
+                  await htmx.ajax('POST', "{{url_for('analyze_text')}}", {
+                      source: form,
+                      target: '#table-tasks',
+                      swap: 'beforeend'
+                  });
+                  
+                  const tbody = document.getElementById('table-tasks');
+                  const newRow = tbody.querySelector('tr:first-child');
+                  if (newRow && newRow.dataset.taskId) {
+                      self.startPollingForTask(newRow.dataset.taskId);
+                  }
               }
-          })
-          .then(response => {
-              console.log('Received response for new task');
               
-              // Get task ID from the newly inserted row
-              const tbody = document.getElementById('table-tasks');
-              const newRow = tbody.querySelector('tr:first-child');
+              self.isAnalyzing = false;
+              self.text = '';
+              self.fileName = '';
+              self.selectedFile = null;
               
-              if (newRow && newRow.dataset.taskId) {
-                  const taskId = newRow.dataset.taskId;
-                  this.startPollingForTask(taskId);
+              // Reset file input
+              const fileInput = document.querySelector('input[type="file"]');
+              if (fileInput) {
+                  fileInput.value = '';
               }
               
-              // Reset form and text
-              this.isAnalyzing = false;
-              this.text = '';
-              this.fileName = '';
-          })
-          .catch(error => {
-              console.error('Error:', error);
-              this.isAnalyzing = false;
-              alert('Error al iniciar el análisis');
-          });
+          } catch (error) {
+              self.isAnalyzing = false;
+              self.showError(error.message || 'Error al iniciar el análisis');
+          }
       },
       
       startPollingForTask(taskId) {
-          console.log("Checking status for task:", taskId);
           
           const pollUrl = `{{url_for('task_status')}}/${taskId}`;
           
@@ -222,14 +345,12 @@ function textHandler() {
                   swap: 'outerHTML',
               })
               .then(() => {
-                  // Check if task is complete
                   const row = document.querySelector(`[data-task-id="${taskId}"]`);
                   
                   if (row && (row.innerHTML.includes('terminada') || 
                               row.innerHTML.includes('faltante') || 
                               row.innerHTML.includes('Completado') || 
                               row.innerHTML.includes('Error'))) {
-                      // Stop polling for this task
                       if (this.activeTasks[taskId]) {
                           clearInterval(this.activeTasks[taskId]);
                           delete this.activeTasks[taskId];
@@ -237,7 +358,6 @@ function textHandler() {
                   }
               })
               .catch(error => {
-                  console.error('Error checking status:', error);
                   if (this.activeTasks[taskId]) {
                       clearInterval(this.activeTasks[taskId]);
                       delete this.activeTasks[taskId];
@@ -245,10 +365,8 @@ function textHandler() {
               });
           };
           
-          // Check immediately
           checkStatus();
           
-          // Then poll every 1 second
           const intervalId = setInterval(checkStatus, 1000);
           this.activeTasks[taskId] = intervalId;
       },
@@ -258,13 +376,6 @@ function textHandler() {
               clearInterval(this.activeTasks[taskId]);
               delete this.activeTasks[taskId];
           }
-      },
-      
-      stopAllPolling() {
-          Object.keys(this.activeTasks).forEach(taskId => {
-              clearInterval(this.activeTasks[taskId]);
-          });
-          this.activeTasks = {};
       },
       
       deleteTask(taskId) {
@@ -304,7 +415,6 @@ function deleteModal() {
         indicator.classList.remove('hidden');
       }
       
-      // Use htmx.on() on document for HTMX 2.0.7 compatibility with htmx.ajax()
       const handleCompletion = (e) => {
         if (indicator) {
           indicator.classList.add('hidden');
@@ -314,7 +424,6 @@ function deleteModal() {
           this.handleDeleteSuccess();
         }
         
-        // Remove listener after handling
         htmx.off(document, 'htmx:afterRequest', handleCompletion);
       };
       
@@ -326,10 +435,8 @@ function deleteModal() {
       });
     },
     handleDeleteSuccess() {
-      // Save the ID before closing the modal (which clears this.document)
       const docId = this.document.id;
       
-      // Remove the document row from the table
       const rows = document.querySelectorAll('#table-tasks tr');
       rows.forEach(row => {
         const btn = row.querySelector(`button[data-doc-id="${docId}"]`);

@@ -133,6 +133,10 @@ class CORSSettings(BaseSettings):
 class EnvironmentSettings(BaseSettings):
     ENVIRONMENT: EnvironmentOption = config("ENVIRONMENT", default=EnvironmentOption.LOCAL)
 
+class FileSettings(BaseSettings):
+    MAX_FILE_SIZE: int = config("MAX_FILE_SIZE", default=10 * 1024 * 1024)
+    
+
 class Settings(
     AppSettings,
     SQLiteSettings,
@@ -149,6 +153,7 @@ class Settings(
     EnvironmentSettings,
     CORSSettings,
     MLModelsSettings,
+    FileSettings,
 ):
     pass
 
