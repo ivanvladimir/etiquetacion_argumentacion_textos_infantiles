@@ -1,442 +1,441 @@
 {% extends 'base.html' %}
 {% block title %}Etiquetar un texto{% endblock %}
+
 {% block restricted_content %}
 <div class="max-w-7xl mx-auto" x-data="textHandler()" x-init="window.textHandlerInstance = $data">
   <!-- Error Message Area -->
   <div id="error-message" class="card bg-red-50 border-2 border-red-300 shadow-lg p-4 md:p-4 leading-relaxed mb-6" hidden>
-      <div class="text-red-800 font-semibold" x-text="errorMessage"></div>
+    <div class="text-red-800 font-semibold" x-text="errorMessage"></div>
   </div>
-  
+
   <!-- Header -->
   <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
-      <h1 class="text-4xl font-bold text-gray-800 mb-2">Analiza un texto</h1>
-      <p class="text-gray-600">Sube un archivo, arrastralo o pegalo</p>
+    <h1 class="text-4xl font-bold text-gray-800 mb-2">Analiza un texto</h1>
+    <p class="text-gray-600">Sube un archivo, arrastralo o pegalo</p>
   </div>
-  
+
   <!-- Input Methods -->
   <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
-      <div class="space-y-6">
-          <!-- File Upload Button -->
-          <!-- File Upload Button -->
-          <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Sube archivo desde tu equipo</label>
-              <input 
-                  type="file" 
-                  accept=".txt,.pdf,.docx,.doc,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
-                  @change="handleFiles($event.target.files)"
-                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:cursor-pointer cursor-pointer"
-              >
-          </div>
-          
-          <!-- // Drag & Drop Zone -->
-          <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Arrastra y soltar</label>
-              <div 
-                  @drop.prevent="handleDrop"
-                  @dragover.prevent="isDragging = true"
-                  @dragleave.prevent="isDragging = false"
-                  :class="isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 bg-gray-50'"
-                  class="border-4 border-dashed rounded-xl p-12 text-center transition-all duration-200"
-              >
-                  <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                  </svg>
-                  <p class="text-lg font-medium text-gray-700">Suelta tu archivo aquí</p>
-                  <p class="text-sm text-gray-500 mt-1">Archivos tipo: .txt, .pdf, .docx</p>
-              </div>
-          </div>
-          
-          <!-- Paste Area -->
-          <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">O pega el texto aquí</label>
-              <textarea 
-                  x-model="text"
-                  @paste="handlePaste"
-                  placeholder="Pega tu texto aquí con botón derecho y copiar, o con las teclas Ctrl+V / Cmd+V..."
-                  class="w-full h-32 px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"
-              ></textarea>
-              <div class="grid grid-cols-2 gap-4">
-              <div role="alert" class="alert ">
-                  <span x-text="`Caracteres: ${text.length}`"></span>
-                  <span x-text="`Palabras: ${text.split(/\s+/).filter(w => w.length > 0).length}`"></span>
-              </div>
-              <button 
-                      @click="clearText"
-                      class="px-4 py-2 bg-yellow-200 text-black rounded-lg hover:bg-red-600 transition-colors font-medium"
-                  >
-                      Borrar texto
-              </button>
-              </div>
-              <button
-                  :disabled="isAnalyzing"
-                  @click="startAnalysis"
-                  :class="isAnalyzing ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'"
-                  class="mt-3 w-full px-6 py-3 text-white rounded-lg transition-colors font-semibold"
-              >
-                  <span x-show="!isAnalyzing">Solicitud de análisis</span>
-                  <span x-show="isAnalyzing">Analizando...</span>
-              </button>
-          </div>
+    <div class="space-y-6">
+      <!-- File Upload Button -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Sube archivo desde tu equipo</label>
+        <input 
+          type="file" 
+          id="file-input"
+          accept=".txt,.pdf,.docx,.doc,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
+          @change="handleFiles($event.target.files)"
+          hx-disable
+          class="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:cursor-pointer cursor-pointer"
+        >
       </div>
+
+      <!-- Drag & Drop Zone -->
+      <div>
+
+      <!-- Paste Area with Form -->
+      <form id="analyze-form" hx-post="{{ url_for('analyze_text') }}" hx-target="#table-tasks" hx-swap="beforeend" @htmx:xhr:send="isAnalyzing = true" @htmx:after-request="handleFormResponse">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">O pega el texto aquí</label>
+        <textarea 
+          x-model="text"
+          name="text"
+          @paste="handlePaste"
+          placeholder="Pega tu texto aquí con botón derecho y copiar, o con las teclas Ctrl+V / Cmd+V..."
+          class="w-full h-32 px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"
+        ></textarea>
+        <div class="grid grid-cols-2 gap-4">
+          <div role="alert" class="alert">
+            <span x-text="`Caracteres: ${text.length}`"></span>
+            <span x-text="`Palabras: ${text.split(/\s+/).filter(w => w.length > 0).length}`"></span>
+          </div>
+          <button 
+            @click="clearText()"
+            type="button"
+            class="px-4 py-2 bg-yellow-200 text-black rounded-lg hover:bg-red-600 transition-colors font-medium"
+          >
+            Borrar texto
+          </button>
+        </div>
+        <button
+          type="button"
+          @click="startAnalysis"
+          :disabled="isAnalyzing"
+          :class="isAnalyzing ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'"
+          class="mt-3 w-full px-6 py-3 text-white rounded-lg transition-colors font-semibold"
+        >
+          <span x-show="!isAnalyzing">Solicitud de análisis</span>
+          <span x-show="isAnalyzing">Analizando...</span>
+        </button>
+      </form>
+    </div>
   </div>
 </div>
 
-
 <!-- File History -->
 <div class="bg-white rounded-2xl shadow-xl p-8 mb-6 max-w-7xl mx-auto" x-show="fileHistory.length > 0" x-data="textHandler()">
-    <h3 class="text-xl font-bold text-gray-800 mb-4">Historial de archivos</h3>
-    <div class="flex flex-wrap gap-2">
-        <template x-for="file in fileHistory" :key="file.name">
-            <button 
-                @click="selectFromHistory(file)"
-                class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors font-medium text-sm"
-                x-text="file.name"
-            ></button>
-        </template>
-    </div>
+  <h3 class="text-xl font-bold text-gray-800 mb-4">Historial de archivos</h3>
+  <div class="flex flex-wrap gap-2">
+    <template x-for="file in fileHistory" :key="file.name">
+      <button 
+        @click="selectFromHistory(file)"
+        class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors font-medium text-sm"
+        x-text="file.name"
+      ></button>
+    </template>
+  </div>
 </div>
 
 <!-- Tasks Table -->
 <div class="card bg-base-100 shadow-xl max-w-7xl mx-auto" x-data="deleteModal()">
   <div class="card-body">
-      <h2 class="card-title mb-4">Solicitudes de análsis</h2>
-      <div class="overflow-x-auto">
-          <table class="table w-full">
-              <thead>
-                  <tr class="bg-base-200">
-                      <th>Nombre de documento</th>
-                      <th>Estado</th>
-                      <th>Inicio de tarea</th>
-                      <th>Fin de tarea</th>
-                      <th>Acciones</th>
-                  </tr>
-              </thead>
-              <tbody id="table-tasks">
-                  <!-- Task rows will be inserted here -->
-              </tbody>
-          </table>
-      </div>
+    <h2 class="card-title mb-4">Solicitudes de análsis</h2>
+    <div class="overflow-x-auto">
+      <table class="table w-full">
+        <thead>
+          <tr class="bg-base-200">
+            <th>Nombre de documento</th>
+            <th>Estado</th>
+            <th>Inicio de tarea</th>
+            <th>Fin de tarea</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="table-tasks">
+        </tbody>
+      </table>
+    </div>
   </div>
-  
-  <!-- Single Reusable Delete Modal -->
+
+  <!-- Delete Modal -->
   <dialog id="delete-modal" class="modal" @keydown.escape="closeModal()">
     <div class="modal-box">
       <h3 class="font-bold text-lg">Confirmar eliminación</h3>
       <p class="py-4">
-        ¿Está seguro de que desea eliminar el documento <strong x-text="document.name"></strong>? 
-        Esta acción no se puede deshacer.
+        ¿Está seguro de que desea eliminar el documento <strong x-text="document.name"></strong>?
       </p>
-      
       <div id="delete-indicator" class="htmx-request:flex hidden flex justify-center items-center py-4">
         <span class="loading loading-spinner loading-md"></span>
       </div>
-      
       <div class="modal-action">
         <button type="button" class="btn" @click="closeModal()">Cancelar</button>
         <button type="button" class="btn btn-error" @click="sendDelete()">Eliminar</button>
       </div>
     </div>
   </dialog>
-  
-  <!-- Close modal when clicking outside -->
+
   <form method="dialog" class="modal-backdrop">
     <button>Cerrar</button>
   </form>
-</dialog>
+</div>
 {% endblock %}
 
 {% block script %}
 function textHandler() {
   return {
-      text: '',
-      isDragging: false,
-      fileName: '',
-      isAnalyzing: false,
-      selectedFile: null,
-      errorMessage: '',
-      activeTasks: {},
-      fileHistory: [],
-      
-      showError(message) {
-          this.errorMessage = message;
-          const errorDiv = document.getElementById('error-message');
-          if (errorDiv) {
-              errorDiv.removeAttribute('hidden');
-              setTimeout(() => {
-                  errorDiv.setAttribute('hidden', '');
-              }, 5000);
-          }
-      },
-      
-      hideError() {
-          this.errorMessage = '';
-          const errorDiv = document.getElementById('error-message');
-          if (errorDiv) {
-              errorDiv.setAttribute('hidden', '');
-          }
-      },
-      
-      handleFiles(files) {
-          if (files.length === 0) return;
-          const file = files[0];
-          
-          const supportedTypes = ['text/plain', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
-          const supportedExtensions = ['.txt', '.pdf', '.docx', '.doc'];
-          
-          const isSupported = supportedTypes.includes(file.type) || 
-                            supportedExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
-          
-          if (isSupported) {
-              this.$nextTick(() => {
-                  this.fileName = file.name;
-                  this.selectedFile = file;
-                  this.hideError();
-                  this.addToHistory(file);
-              });
-          } else {
-              this.showError('Por favor sube un archivo soportado (.txt, .pdf, .docx, .doc)');
-          }
-      },
-      
-      addToHistory(file) {
-          // Check if file already exists in history
-          const exists = this.fileHistory.some(f => f.name === file.name && f.size === file.size);
-          if (!exists) {
-              this.fileHistory.unshift({ name: file.name, file: file, size: file.size });
-              // Keep only last 10 files
-              if (this.fileHistory.length > 10) {
-                  this.fileHistory.pop();
-              }
-          }
-      },
-      
-      selectFromHistory(historyItem) {
-          this.fileName = historyItem.name;
-          this.selectedFile = historyItem.file;
-          this.hideError();
-      },
-      
-      handleDrop(e) {
-          this.isDragging = false;
-          this.handleFiles(e.dataTransfer.files);
-      },
-      
-      handlePaste(e) {
-          const pastedText = e.clipboardData.getData('text');
-          if (pastedText) {
-              this.text = pastedText;
-              this.fileName = 'Texto pegado';
-              this.selectedFile = null;
-          }
-      },
-      
-      clearText() {
-            this.text = '';
-            this.fileName = '';
-            this.selectedFile = null;
-      },
-      
-      startAnalysis() {
-        const fileInput = document.querySelector('input[type="file"]');
-        const hasFile = this.selectedFile || (fileInput && fileInput.files && fileInput.files.length > 0);
-        
-        if (!hasFile && this.text.trim().length === 0) {
-            this.showError('Por favor sube un archivo o ingresa un texto para analizar');
-            return;
+    text: '',
+    fileName: '',
+    isAnalyzing: false,
+    selectedFile: null,
+    errorMessage: '',
+    activeTasks: {},
+    fileHistory: [],
+
+    showError(message) {
+      this.errorMessage = message;
+      const errorDiv = document.getElementById('error-message');
+      if (errorDiv) {
+        errorDiv.removeAttribute('hidden');
+        setTimeout(() => {
+          errorDiv.setAttribute('hidden', '');
+        }, 5000);
+      }
+    },
+
+    hideError() {
+      this.errorMessage = '';
+      const errorDiv = document.getElementById('error-message');
+      if (errorDiv) {
+        errorDiv.setAttribute('hidden', '');
+      }
+    },
+
+    handleFiles(files) {
+      if (files.length === 0) return;
+      const file = files[0];
+
+      const supportedTypes = [
+        'text/plain',
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/msword'
+      ];
+      const supportedExtensions = ['.txt', '.pdf', '.docx', '.doc'];
+
+      const isSupported = supportedTypes.includes(file.type) ||
+        supportedExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+
+      if (isSupported) {
+        // For dropped files with size 0, try reading to load the file
+        if (file.size === 0) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            this.setSelectedFile(file);
+          };
+          reader.onerror = () => {
+            this.showError('Error al leer el archivo');
+          };
+          // Read just the first byte to trigger loading
+          reader.readAsArrayBuffer(file.slice(0, 1));
+        } else {
+          this.setSelectedFile(file);
         }
-        
-        if (!this.selectedFile && fileInput && fileInput.files && fileInput.files.length > 0) {
-            this.selectedFile = fileInput.files[0];
-            this.fileName = this.selectedFile.name;
+      } else {
+        this.showError('Por favor sube un archivo soportado (.txt, .pdf, .docx, .doc)');
+      }
+    },
+
+    setSelectedFile(file) {
+      this.$nextTick(() => {
+        this.fileName = file.name;
+        this.selectedFile = file;
+        this.hideError();
+        this.addToHistory(file);
+        // Disable text temporarily so user must click button
+        const textarea = document.querySelector('textarea[name="text"]');
+        if (textarea) {
+          textarea.value = '';
+          this.text = '';
         }
-        
+      });
+    },
+
+    submitFileViaHTMX() {
+      const self = this;
+      
+      if (self.selectedFile.size === 0) {
+        self.showError('El archivo está vacío o no se pudo leer correctamente');
+        self.isAnalyzing = false;
+        return;
+      }
+      
+      self.isAnalyzing = true;
+      self.hideError();
+
+      const formData = new FormData();
+      formData.append('file', self.selectedFile);
+
+      const token = localStorage.access_token;
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // Use fetch directly for file uploads
+      fetch("{{ url_for('analyze_text') }}", {
+        method: 'POST',
+        body: formData,
+        headers: headers,
+        credentials: 'include'
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.text();
+      })
+      .then(html => {
+        const tbody = document.getElementById('table-tasks');
+        tbody.insertAdjacentHTML('afterbegin', html);
+
+        const newRow = tbody.querySelector('tr:first-child');
+        if (newRow && newRow.dataset.taskId) {
+          self.startPollingForTask(newRow.dataset.taskId);
+        }
+
+        self.isAnalyzing = false;
+        self.fileName = '';
+        self.selectedFile = null;
+
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(input => input.value = '');
+      })
+      .catch(error => {
+        self.isAnalyzing = false;
+        self.showError('Error al subir el archivo: ' + error.message);
+      });
+    },
+
+    addToHistory(file) {
+      const exists = this.fileHistory.some(f => f.name === file.name && f.size === file.size);
+      if (!exists) {
+        this.fileHistory.unshift({ name: file.name, file: file, size: file.size });
+        if (this.fileHistory.length > 10) {
+          this.fileHistory.pop();
+        }
+      }
+    },
+
+    selectFromHistory(historyItem) {
+      this.fileName = historyItem.name;
+      this.selectedFile = historyItem.file;
+      this.hideError();
+    },
+
+
+
+    handlePaste(e) {
+      const pastedText = e.clipboardData.getData('text');
+      if (pastedText) {
+        this.text = pastedText;
+        this.fileName = 'Texto pegado';
+        this.selectedFile = null;
+      }
+    },
+
+    clearText() {
+      this.text = '';
+      this.fileName = '';
+      this.selectedFile = null;
+      const fileInput = document.querySelector('input[type="file"]');
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    },
+
+    startAnalysis() {
+      const form = document.getElementById('analyze-form');
+      const textarea = form.querySelector('textarea[name="text"]');
+      
+      if (this.selectedFile) {
+        // File is selected, submit via fetch
+        this.submitFileViaHTMX();
+      } else if (textarea.value.trim()) {
+        // Text is entered, submit via HTMX form
         this.hideError();
         this.isAnalyzing = true;
-        this.submitForm();
-      },
+        form.requestSubmit();
+      } else {
+        // No file or text
+        this.showError('Por favor sube un archivo o ingresa un texto para analizar');
+      }
+    },
+
+    handleFormResponse(e) {
+      this.isAnalyzing = false;
       
-      async submitForm() {
-          const self = this;
-          
-          try {
-              if (self.selectedFile) {
-                  const formData = new FormData();
-                  formData.append('file', self.selectedFile);
-                  
-                  const headers = {};
-                  const token = localStorage.access_token;
-                  if (token) {
-                      headers['Authorization'] = 'Bearer ' + token;
-                  }
-                  
-                  const response = await fetch("{{url_for('analyze_text')}}", {
-                      method: 'POST',
-                      body: formData,
-                      headers: headers,
-                      credentials: 'include'
-                  });
-                  
-                  if (response.status === 401) {
-                      const success = await refreshAccessToken();
-                      if (success) {
-                          return self.submitForm();
-                      } else {
-                          logout();
-                          throw new Error('Authentication failed');
-                      }
-                  }
-                  
-                  if (!response.ok) {
-                      throw new Error(`HTTP ${response.status}`);
-                  }
-                  
-                  const html = await response.text();
-                  
-                  const tbody = document.getElementById('table-tasks');
-                  tbody.insertAdjacentHTML('afterbegin', html);
-                  
-                  const newRow = tbody.querySelector('tr:first-child');
-                  if (newRow && newRow.dataset.taskId) {
-                      self.startPollingForTask(newRow.dataset.taskId);
-                  }
-              } else {
-                  console.log('Submitting text via HTMX');
-                  const form = document.getElementById('analyze-form');
-                  document.getElementById('form-text').value = self.text;
-                  
-                  await htmx.ajax('POST', "{{url_for('analyze_text')}}", {
-                      source: form,
-                      target: '#table-tasks',
-                      swap: 'beforeend'
-                  });
-                  
-                  const tbody = document.getElementById('table-tasks');
-                  const newRow = tbody.querySelector('tr:first-child');
-                  if (newRow && newRow.dataset.taskId) {
-                      self.startPollingForTask(newRow.dataset.taskId);
-                  }
+      if (e.detail.xhr.status >= 200 && e.detail.xhr.status < 300) {
+        const tbody = document.getElementById('table-tasks');
+        const newRow = tbody.querySelector('tr:first-child');
+        if (newRow && newRow.dataset.taskId) {
+          this.startPollingForTask(newRow.dataset.taskId);
+        }
+        
+        this.text = '';
+        this.fileName = '';
+        this.selectedFile = null;
+      } else {
+        this.showError('Error al procesar la solicitud: ' + e.detail.xhr.status);
+      }
+    },
+
+    startPollingForTask(taskId) {
+      const pollUrl = `{{ url_for('task_status') }}/${taskId}`;
+      const self = this;
+
+      const checkStatus = () => {
+        htmx.ajax('GET', pollUrl, {
+          source: document.body,
+          target: `[data-task-id="${taskId}"]`,
+          swap: 'outerHTML',
+          headers: {
+            'Authorization': `Bearer ${localStorage.access_token || ''}`
+          }
+        })
+          .then(() => {
+            const row = document.querySelector(`[data-task-id="${taskId}"]`);
+
+            if (row && (row.innerHTML.includes('terminada') ||
+              row.innerHTML.includes('faltante') ||
+              row.innerHTML.includes('Completado') ||
+              row.innerHTML.includes('Error'))) {
+              if (self.activeTasks[taskId]) {
+                clearInterval(self.activeTasks[taskId]);
+                delete self.activeTasks[taskId];
               }
-              
-              self.isAnalyzing = false;
-              self.text = '';
-              self.fileName = '';
-              self.selectedFile = null;
-              
-              // Reset file input
-              const fileInput = document.querySelector('input[type="file"]');
-              if (fileInput) {
-                  fileInput.value = '';
-              }
-              
-          } catch (error) {
-              self.isAnalyzing = false;
-              self.showError(error.message || 'Error al iniciar el análisis');
-          }
-      },
-      
-      startPollingForTask(taskId) {
-          
-          const pollUrl = `{{url_for('task_status')}}/${taskId}`;
-          
-          const checkStatus = () => {
-              htmx.ajax('GET', pollUrl, {
-                  source: document.body,
-                  target: `[data-task-id="${taskId}"]`,
-                  swap: 'outerHTML',
-              })
-              .then(() => {
-                  const row = document.querySelector(`[data-task-id="${taskId}"]`);
-                  
-                  if (row && (row.innerHTML.includes('terminada') || 
-                              row.innerHTML.includes('faltante') || 
-                              row.innerHTML.includes('Completado') || 
-                              row.innerHTML.includes('Error'))) {
-                      if (this.activeTasks[taskId]) {
-                          clearInterval(this.activeTasks[taskId]);
-                          delete this.activeTasks[taskId];
-                      }
-                  }
-              })
-              .catch(error => {
-                  if (this.activeTasks[taskId]) {
-                      clearInterval(this.activeTasks[taskId]);
-                      delete this.activeTasks[taskId];
-                  }
-              });
-          };
-          
-          checkStatus();
-          
-          const intervalId = setInterval(checkStatus, 1000);
-          this.activeTasks[taskId] = intervalId;
-      },
-      
-      stopPollingForTask(taskId) {
-          if (this.activeTasks[taskId]) {
-              clearInterval(this.activeTasks[taskId]);
-              delete this.activeTasks[taskId];
-          }
-      },
-      
-      deleteTask(taskId) {
-          this.stopPollingForTask(taskId);
-          const row = document.querySelector(`[data-task-id="${taskId}"]`);
-          if (row) {
-              row.remove();
-          }
-      },
-  }
+            }
+          })
+          .catch(() => {
+            if (self.activeTasks[taskId]) {
+              clearInterval(self.activeTasks[taskId]);
+              delete self.activeTasks[taskId];
+            }
+          });
+      };
+
+      checkStatus();
+      const intervalId = setInterval(checkStatus, 1000);
+      this.activeTasks[taskId] = intervalId;
+    },
+
+    stopPollingForTask(taskId) {
+      if (this.activeTasks[taskId]) {
+        clearInterval(this.activeTasks[taskId]);
+        delete this.activeTasks[taskId];
+      }
+    },
+
+    deleteTask(taskId) {
+      this.stopPollingForTask(taskId);
+      const row = document.querySelector(`[data-task-id="${taskId}"]`);
+      if (row) {
+        row.remove();
+      }
+    }
+  };
 }
 
 function deleteModal() {
   return {
-    document: {
-      id: null,
-      name: '',
-      deleteUrl: ''
-    },
+    document: { id: null, name: '', deleteUrl: '' },
+
     openModal(doc) {
       this.document = doc;
       document.getElementById('delete-modal').showModal();
     },
+
     closeModal() {
       document.getElementById('delete-modal').close();
       this.document = { id: null, name: '', deleteUrl: '' };
     },
+
     sendDelete() {
-      if (!this.document.deleteUrl) {
-        return;
-      }
-      
+      if (!this.document.deleteUrl) return;
+
       const indicator = document.getElementById('delete-indicator');
-      const modal = document.getElementById('delete-modal');
-      
       if (indicator) {
         indicator.classList.remove('hidden');
       }
-      
+
+      const self = this;
       const handleCompletion = (e) => {
         if (indicator) {
           indicator.classList.add('hidden');
         }
-        
         if (e.detail.xhr.status === 200) {
-          this.handleDeleteSuccess();
+          self.handleDeleteSuccess();
         }
-        
         htmx.off(document, 'htmx:afterRequest', handleCompletion);
       };
-      
+
       htmx.on(document, 'htmx:afterRequest', handleCompletion);
-      
       htmx.ajax('DELETE', this.document.deleteUrl, {
         target: '#delete-modal',
         swap: 'none'
       });
     },
+
     handleDeleteSuccess() {
       const docId = this.document.id;
-      
       const rows = document.querySelectorAll('#table-tasks tr');
       rows.forEach(row => {
         const btn = row.querySelector(`button[data-doc-id="${docId}"]`);
@@ -444,9 +443,8 @@ function deleteModal() {
           row.remove();
         }
       });
-      
       this.closeModal();
     }
-  }
+  };
 }
 {% endblock %}
