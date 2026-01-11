@@ -1,8 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Documentos colección{% endblock %}
 {% block restricted_content %}
-
-<div class="max-w-7xl mx-auto" x-data="deleteModal()">
+<div class="max-w-7xl mx-auto" x-data="searchDocuments()">
   <!-- Single Reusable Delete Modal -->
   <dialog id="delete-modal" class="modal" @keydown.escape="closeModal()">
     <div class="modal-box">
@@ -28,13 +27,51 @@
     </form>
   </dialog>
 
+  <!-- Search Bar -->
+  <div class="mb-6 card bg-base-100 shadow-lg">
+    <div class="card-body">
+      <h2 class="card-title text-lg mb-4">Buscar documentos</h2>
+      <div class="join w-full">
+        <label class="input input-bordered join-item flex-1">
+          <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <g
+              stroke-linejoin="round"
+              stroke-linecap="round"
+              stroke-width="2.5"
+              fill="none"
+              stroke="currentColor"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </g>
+          </svg>
+          <input 
+            type="search"
+            class="grow"
+            placeholder="Filtrar documentos"
+            x-model="searchQuery"
+            @input="performSearch()"
+            @keydown.enter="performSearch()"/>
+        </label>
+        <button 
+          type="button"
+          class="btn btn-neutral join-item"
+          @click="clearSearch()"
+          :class="{'opacity-50 cursor-not-allowed': !searchQuery}"
+          :disabled="!searchQuery">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="loading-indicator" class="htmx-request:flex hidden flex justify-center items-center p-4">
     <span class="loading loading-spinner loading-lg"></span>
   </div>
-
   <div id="error-message" class="card bg-base-100 shadow-lg p-4 md:p-4 leading-relaxed" hidden>
   </div>
-
   <div id="data-table" class="overflow-auto"
     hx-trigger="load delay:100ms"
     hx-get="{{url_for('api_docs')}}?scope={{scope}}"
@@ -56,9 +93,13 @@
       </tbody>
     </table>
   </div>
+
+  <!-- No results message -->
+  <div id="no-results" class="text-center py-8 text-gray-500" hidden>
+    <p>No se encontraron documentos que coincidan con "<span x-text="searchQuery"></span>"</p>
+  </div>
 </div>
 {% endblock %}
-
 {% block script %}
 function deleteModal() {
   return {
@@ -87,7 +128,6 @@ function deleteModal() {
         indicator.classList.remove('hidden');
       }
       
-      // Use htmx.on() on document for HTMX 2.0.7 compatibility with htmx.ajax()
       const handleCompletion = (e) => {
         if (indicator) {
           indicator.classList.add('hidden');
@@ -97,7 +137,6 @@ function deleteModal() {
           this.handleDeleteSuccess();
         }
         
-        // Remove listener after handling
         htmx.off(document, 'htmx:afterRequest', handleCompletion);
       };
       
@@ -109,10 +148,8 @@ function deleteModal() {
       });
     },
     handleDeleteSuccess() {
-      // Save the ID before closing the modal (which clears this.document)
       const docId = this.document.id;
       
-      // Remove the document row from the table
       const rows = document.querySelectorAll('#table-documents tr');
       rows.forEach(row => {
         const btn = row.querySelector(`button[data-doc-id="${docId}"]`);
@@ -122,6 +159,78 @@ function deleteModal() {
       });
       
       this.closeModal();
+    }
+  }
+}
+
+function searchDocuments() {
+  return {
+    ...deleteModal(),
+    searchQuery: '',
+    allRows: [],
+    
+    init() {
+      // Check for query parameter on load
+      const urlParams = new URLSearchParams(window.location.search);
+      const query = urlParams.get('q');
+      if (query) {
+        this.searchQuery = query;
+      }
+      
+      // Listen for HTMX swap completion to filter table
+      document.addEventListener('htmx:afterSwap', (e) => {
+        if (e.detail.target.id === 'table-documents') {
+          this.$nextTick(() => {
+            this.filterTable();
+          });
+        }
+      });
+    },
+    
+    performSearch() {
+      // Update URL with search query
+      const url = new URL(window.location);
+      if (this.searchQuery.trim()) {
+        url.searchParams.set('q', this.searchQuery);
+      } else {
+        url.searchParams.delete('q');
+      }
+      window.history.replaceState({}, '', url);
+      
+      // Filter table rows
+      this.$nextTick(() => {
+        this.filterTable();
+      });
+    },
+    
+    filterTable() {
+      const rows = document.querySelectorAll('#table-documents tr');
+      const noResults = document.getElementById('no-results');
+      const query = this.searchQuery.toLowerCase().trim();
+      let visibleCount = 0;
+      
+      rows.forEach(row => {
+        if (!query) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          // Search in all cells of the row
+          const text = row.textContent.toLowerCase();
+          if (text.includes(query)) {
+            row.style.display = '';
+            visibleCount++;
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      });
+      
+      // Show/hide no results message
+      if (visibleCount === 0 && rows.length > 0) {
+        noResults.removeAttribute('hidden');
+      } else {
+        noResults.setAttribute('hidden', '');
+      }
     }
   }
 }
