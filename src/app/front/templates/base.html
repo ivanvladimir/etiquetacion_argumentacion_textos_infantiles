@@ -39,7 +39,7 @@ window.APP_CONFIG = {
     <div class="navbar-start">
       <a class="btn btn-ghost text-xl">✍️ AATI</a>
       <ul class="menu menu-horizontal px-1">
-            {% for page,label in [('main','Principal'),('labelling','Etiquetar textos')] %}
+            {% for page,label in [('main','Principal'),('labelling','Etiquetar textos'), ('search','Buscar')] %}
             <li><a {%if active_page == page%}class="menu-active"{%endif%} href="{{url_for(page)}}">{{label}}</a></li>
             {% endfor %}
             <li>

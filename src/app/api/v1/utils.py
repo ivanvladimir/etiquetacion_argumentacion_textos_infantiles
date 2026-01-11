@@ -32,6 +32,44 @@ templates.env.filters["naturaltime"] = naturaltime
 
 router = APIRouter(tags=["utils"])
 
+@router.get("/search", status_code=201)
+async def api_search(
+    request: Request,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(async_get_db)],
+    docsearch: Annotated[AsyncGenerator, Depends(get_meilisearch_client)],
+    q: str | None = None,
+    page: int = 1,
+    results_per_page: int = 20,
+    ) -> HTMLResponse:
+
+    result = await docsearch.index("documents").search(
+        q,
+        hits_per_page=results_per_page,
+        page=page,
+        attributes_to_highlight = ['text'],
+        attributes_to_crop = ['text'],
+        highlight_pre_tag = '<mark>',
+        highlight_post_tag = '</mark>',
+        crop_length = 20,
+        filter=["type = 'original'"]
+    )
+
+    response = templates.TemplateResponse(
+        request=request,
+        name="search_results.html",
+        context={
+            'documents': result.hits,
+            'search_term': q,
+            'page':page,
+            'offset': (page - 1) * results_per_page,
+            'last_page': ((page + 1) * results_per_page + 1) > result.total_hits,
+        }
+    )
+    return response
+
+ 
+
 @router.post("/analyze", status_code=201)
 async def analyze_text(
     request: Request,

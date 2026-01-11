@@ -1,0 +1,16 @@
+{% for doc in documents %}
+  <tr>
+    <td>{{offset+loop.index}}</td>
+    <td><a href="{{url_for('doc',document_id=doc.id)}}">{{doc.name_document}} </a></td>
+    <td>{{doc.created_at | naturaltime }}</td>
+    <td>{{doc._formatted.text | safe }} </td>
+  </tr>
+  {% if loop.last and not last_page %}
+  <tr hx-get="{{url_for('api_search')}}?q={{search_term}}&page={{page+1}}"
+      hx-trigger="revealed once"
+      hx-swap="beforeend">
+  </tr>
+  {% endif %}
+
+{% endfor %}
+

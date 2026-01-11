@@ -25,7 +25,26 @@ async def labelling(request: Request) -> HTMLResponse:
     )
     return response
 
-@router.get("/documents/")
+@router.get("/search")
+async def search(
+    request: Request,
+    q: str = Query(default="", description="Search term")) -> HTMLResponse:
+    """
+    Search for terms into the documents
+    """
+    start_time = time.time()
+    response = templates.TemplateResponse(
+        request=request,
+        name="user/search.html",
+        context={
+            "search_term": q,
+            "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
+            "active_page": 'search',
+        },
+    )
+    return response
+
+@router.get("/documents")
 async def docs(
     request: Request) -> HTMLResponse:
     """
@@ -44,7 +63,7 @@ async def docs(
     )
     return response
 
-@router.get("/mydocuments/")
+@router.get("/mydocuments")
 async def mydocs(
     request: Request) -> HTMLResponse:
     """

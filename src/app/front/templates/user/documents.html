@@ -203,6 +203,20 @@ function searchDocuments() {
       });
     },
     
+    clearSearch() {
+      this.searchQuery = '';
+      
+      // Update URL to remove search query
+      const url = new URL(window.location);
+      url.searchParams.delete('q');
+      window.history.replaceState({}, '', url);
+      
+      // Filter table to show all rows
+      this.$nextTick(() => {
+        this.filterTable();
+      });
+    },
+    
     filterTable() {
       const rows = document.querySelectorAll('#table-documents tr');
       const noResults = document.getElementById('no-results');

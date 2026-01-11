@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Buscar términos{% endblock %}
+{% block restricted_content %}
+<div class="max-w-7xl mx-auto" x-data="searchDocuments()">
+  <div id="error-message" class="card bg-base-100 shadow-lg p-4 md:p-4 leading-relaxed" hidden>
+  </div>
+  <!-- Search Bar -->
+  <div class="mb-6 card bg-base-100 shadow-lg">
+    <div class="card-body">
+      <h2 class="card-title text-lg mb-4">Buscar documentos con término</h2>
+      <div class="join w-full">
+        <label class="input input-bordered join-item flex-1">
+          <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <g
+              stroke-linejoin="round"
+              stroke-linecap="round"
+              stroke-width="2.5"
+              fill="none"
+              stroke="currentColor"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </g>
+          </svg>
+          <input
+            id="search-input"
+            name="query"
+            type="search"
+            class="grow"
+            placeholder="Términos a buscar"
+            x-model="searchQuery"
+            @keyup.enter="performSearch()"
+            hx-indicator="#loading-indicator"
+            @change="updateURL()"/>
+        </label>
+        <button 
+          type="button"
+          class="btn btn-neutral join-item"
+          @click="clearSearch()"
+          title="Limpiar búsqueda">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="loading-indicator" class="htmx-request:flex hidden flex justify-center items-center p-4">
+    <span class="loading loading-spinner loading-lg"></span>
+  </div>
+  <div id="data-table" class="overflow-auto">
+    <table class="table table-zebra w-full">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Documento</th>
+          <th>Creado</th>
+          <th>Fragmento de texto</th>
+        </tr>
+      </thead>
+      <tbody id="search-results">
+      </tbody>
+    </table>
+  </div>
+  <!-- No results message -->
+  <div id="no-results" class="text-center py-8 text-gray-500" hidden>
+    <p>No se encontraron documentos que coincidan con "<span x-text="searchQuery"></span>"</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+function searchDocuments() {
+  return {
+    searchQuery: '',
+    
+    init() {
+      // Get query parameter from URL if it exists
+      const params = new URLSearchParams(window.location.search);
+      const queryParam = params.get('q');
+      
+      if (queryParam) {
+        this.searchQuery = queryParam;
+        this.$nextTick(() => {
+          this.performSearch();
+        });
+      }
+    },
+    
+    updateURL() {
+      // Update URL with the current search query
+      const url = new URL(window.location);
+      
+      if (this.searchQuery.trim()) {
+        url.searchParams.set('q', this.searchQuery);
+      } else {
+        url.searchParams.delete('q');
+      }
+      
+      window.history.replaceState({}, '', url);
+    },
+    
+    clearSearch() {
+      // Clear the search input and reset results
+      this.searchQuery = '';
+      
+      // Clear URL parameters
+      const url = new URL(window.location);
+      url.searchParams.delete('q');
+      window.history.replaceState({}, '', url);
+      
+      // Clear the results
+      document.getElementById('search-results').innerHTML = '';
+      document.getElementById('no-results').hidden = true;
+    },
+    
+    performSearch() {
+      if (this.searchQuery.trim()) {
+        // Trigger HTMX search
+        const searchInput = document.getElementById('search-input');
+        htmx.ajax('GET', '{{ url_for("api_search")}}?q=' + encodeURIComponent(this.searchQuery), {
+          target: '#search-results',
+          indicator: '#loading-indicator'
+        });
+      }
+    }
+  }
+}
+{% endblock %}
