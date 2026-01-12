@@ -39,14 +39,14 @@ async def api_search(
     db: Annotated[AsyncSession, Depends(async_get_db)],
     docsearch: Annotated[AsyncGenerator, Depends(get_meilisearch_client)],
     q: str | None = None,
-    page: int = 1,
+    page: int = 0,
     results_per_page: int = 20,
     ) -> HTMLResponse:
 
     result = await docsearch.index("documents").search(
         q,
-        hits_per_page=results_per_page,
-        page=page,
+        limit=results_per_page,
+        offset=page*results_per_page,
         attributes_to_highlight = ['text'],
         attributes_to_crop = ['text'],
         highlight_pre_tag = '<mark>',
@@ -54,6 +54,7 @@ async def api_search(
         crop_length = 20,
         filter=["type = 'original'"]
     )
+    print(result)
 
     response = templates.TemplateResponse(
         request=request,
@@ -62,8 +63,8 @@ async def api_search(
             'documents': result.hits,
             'search_term': q,
             'page':page,
-            'offset': (page - 1) * results_per_page,
-            'last_page': ((page + 1) * results_per_page + 1) > result.total_hits,
+            'offset': page * results_per_page,
+            'last_page': ((page + 1) * results_per_page + 1) > result.estimated_total_hits,
         }
     )
     return response

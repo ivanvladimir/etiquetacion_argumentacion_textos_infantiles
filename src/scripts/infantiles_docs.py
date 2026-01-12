@@ -88,15 +88,16 @@ async def add_documents_(filename:str, collection_name:str, index: str):
     documents=[]
     for i,(doc,html) in enumerate(htmls):
         document_id=uuid.uuid4().hex
+        document_id_=uuid.uuid4().hex
         documents.append({
             'id': document_id,
+            'id_labelled':document_id_,
             'text':doc,
             'name_document':f"{i}",
             'type':'original',
             'model': collection_name,
             'created_at': datetime.now().isoformat()
         })
-        document_id_=uuid.uuid4().hex
         documents.append({
             'id': document_id_,
             'id_original':document_id,
