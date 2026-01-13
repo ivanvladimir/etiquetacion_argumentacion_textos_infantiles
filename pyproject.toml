@@ -23,6 +23,7 @@ dependencies = [
     "dateparser>=1.2.2",
     "python-docx>=1.2.0",
     "humanize>=4.15.0",
+    "fastapi-mail>=1.6.1",
 ]
 
 [tool.uv.sources]

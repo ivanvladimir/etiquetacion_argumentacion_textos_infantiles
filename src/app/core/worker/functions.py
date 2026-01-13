@@ -4,8 +4,13 @@ import uvloop
 import torch
 import uuid
 from datetime import datetime
+from pydantic import EmailStr
+from typing import List
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
+
 from arq.worker import Worker
-from ..config import settings, MLModelsSettings
+
+from ..config import settings, MLModelsSettings, MailSettings
 from ..ml_models import model_cache
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -23,11 +28,27 @@ DATABASE_URI = f"{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@db:{setti
 DATABASE_PREFIX = settings.POSTGRES_ASYNC_PREFIX
 DATABASE_URL = f"{DATABASE_PREFIX}{DATABASE_URI}"
 
-
 # -------- background tasks --------
 async def sample_background_task(ctx: Worker, name: str) -> str:
     await asyncio.sleep(5)
     return f"Task {name} is complete!"
+
+async def send_email_task(
+    ctx: Worker,
+    subject: str,
+    recipients: List[str],
+    body: str,
+        subtype: MessageType) -> dict:
+    """Send an email task"""
+    fm = ctx["fm"]
+    message = MessageSchema(
+        subject=subject,
+        recipients=recipients,
+        body=body,
+        subtype=subtype)
+    fm.send_message(message)
+
+    return {"status": "success", "detail": f"Email sent to: {', '.join(recipients)}"}
 
 async def predict_task(
         ctx: Worker, 
@@ -114,10 +135,26 @@ async def predict_task(
 # -------- base functions --------
 async def startup(ctx: Worker) -> None:
     logging.info("Worker Started")
-    logger.info("Worker starting (models loaded by FastAPI)")
+    logger.info("Worker starting model cache loading")
     if isinstance(settings, MLModelsSettings):
         await model_cache.load_models(model_path=settings.ML_MODELS_DIRPATH, model_names=settings.ML_MODELS_NAMES)
     ctx["model_cache"] = model_cache
+
+    conf = None
+    logger.info("Worker starting email configuration")
+    if isinstance(settings, MailSettings):
+        conf = ConnectionConfig(
+            MAIL_SERVER=settings.MAIL_SERVER,
+            MAIL_PASSWORD=settings.MAIL_PASSWORD,
+            MAIL_USERNAME=settings.MAIL_USERNAME,
+            MAIL_FROM=settings.MAIL_FROM,
+            MAIL_PORT=settings.MAIL_PORT,
+            MAIL_FROM_NAME=settings.MAIL_FROM_NAME,
+            MAIL_STARTTLS=settings.MAIL_STARTTLS,
+            MAIL_SSL_TLS=settings.MAIL_SSL_TLS)
+
+        fm = FastMail(conf)
+    ctx["fm"] = conf
 
 async def shutdown(ctx: Worker) -> None:
     logging.info("Worker end")

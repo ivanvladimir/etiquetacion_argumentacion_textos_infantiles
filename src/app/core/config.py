@@ -134,8 +134,17 @@ class EnvironmentSettings(BaseSettings):
     ENVIRONMENT: EnvironmentOption = config("ENVIRONMENT", default=EnvironmentOption.LOCAL)
 
 class FileSettings(BaseSettings):
-    MAX_FILE_SIZE: int = config("MAX_FILE_SIZE", default=10 * 1024 * 1024)
+    MAX_FILE_SIZE: int = config("MAX_FILE_SIZE", default=1 * 1024 * 1024)
     
+class MailSettings(BaseSettings):
+    MAIL_SERVER: str = config("MAIL_SERVER", default="smtp.gmail.com")
+    MAIL_PASSWORD: str = config("MAIL_PASSWORD", default="password")
+    MAIL_USERNAME: str = config("MAIL_USERNAME", default="app_mail")
+    MAIL_FROM: str = config("MAIL_FROM", default="app_mail@gmail.com")
+    MAIL_FROM_NAME: str = config("MAIL_FROM_NAME", default="AATI App")
+    MAIL_STARTTLS: bool = config("MAIL_STARTTLS", default=True)
+    MAIL_SSL_TLS: bool = config("MAIL_SSL_TLS", default=False)
+    MAIL_PORT: int = config("MAIL_PORT", default=587)
 
 class Settings(
     AppSettings,
@@ -154,6 +163,7 @@ class Settings(
     CORSSettings,
     MLModelsSettings,
     FileSettings,
+    MailSettings
 ):
     pass
 
