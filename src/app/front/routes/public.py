@@ -36,6 +36,8 @@ async def main(request: Request) -> HTMLResponse:
     else:
         raise HTTPException(status_code=404, detail="Page not found")
 
+
+
 @router.get("/page/{view}")
 async def page(view: str, request: Request) -> HTMLResponse:
     """

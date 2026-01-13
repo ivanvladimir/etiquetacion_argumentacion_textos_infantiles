@@ -55,16 +55,18 @@ window.APP_CONFIG = {
       </ul>
     </div>
     <div class="navbar-end">
-        <ul class="menu menu-horizontal px-1">
-        <li>
-          <details>
+      <div class="flex items-center gap-2">
+          <details class="dropdown z-50">
             <summary {%if active_page == 'info'%}class="menu-active"{%endif%}>Información</summary>
             <ul class="bg-base-100 rounded-t-none p-2">
               <li><a {%if active_page == 'info'%}class="menu-active"{%endif%} href="/">Estadísticas</a></li>
             </ul>
           </details>
-        </li>
-        <li>
+        <a 
+          x-show="!isLoggedIn"
+          class="btn btn-warning"
+          href="{{url_for('register')}}">Registrarse
+        </a>
         <button 
           x-bind:disabled="isLoggedIn ? false : true"
           class="btn btn-secondary"
@@ -72,11 +74,10 @@ window.APP_CONFIG = {
           hx-trigger="click"
           hx-swap="none"
           @htmx:after-request="handleLogout($event)">
-            <span x-show="!loading">Logout</span>
-            <span x-show="loading">Logging out...</span>
+            <span x-show="!loading">Salir</span>
+            <span x-show="loading">Saliendo...</span>
         </button>
-        </li>
-        </ul>
+      </div>
     </div>
 </div>
 <!-- Mobile Menu - sm:hidden to show only on mobile -->
@@ -132,13 +133,20 @@ window.APP_CONFIG = {
             <ul class="bg-base-100 rounded-t-none p-2">
               <li>
                 <a 
-                  {% if active_page == 'info'%}class="menu-active"{% endif %} 
+                  {% if active_menu == 'stats'%}class="menu-active"{% endif %} 
                   href="/">
                   Estadísticas
                 </a>
               </li>
             </ul>
           </details>
+        </li>
+        <li>
+        <a 
+          x-show="!isLoggedIn"
+          class="btn btn-warning"
+          href="{{url_for('register')}}">Registrarse
+        </a>
         </li>
         <!-- Logout Button -->
         <li class="mt-2 border-t border-base-300 pt-2">
@@ -169,6 +177,7 @@ window.APP_CONFIG = {
   </div>
 </div>
 
+{% if active_page != "register" %}
 <!-- Login Form (shown only when not logged in and auth check is complete) -->
 <div x-show="!isLoggedIn && !isChecking" class="card bg-base-100 shadow-xl mb-8">
   <div class="card-body">
@@ -228,6 +237,15 @@ window.APP_CONFIG = {
       </form>
   </div>
 </div>
+{% endif %}
+
+<div x-show="!isChecking">
+<div class="container mx-auto px-4 py-8">
+{% block public_content %}
+{% endblock %}
+</div>
+</div>
+
 
 <!-- Restricted Section (shown only when logged in and auth check is complete) -->
 <div x-show="isLoggedIn && !isChecking" class="restricted-section">

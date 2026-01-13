@@ -82,7 +82,7 @@ async def api_docs(
         )
 
     if docs.total == 0:
-        raise NotFoundException("No documents found for current user.")
+        raise NotFoundException(f"No se encontraron documentos para el usuario {current_user['username']}")
 
     re_remove_tags=re.compile(r'<[^>]+>')
     documents=[]

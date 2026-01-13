@@ -82,6 +82,21 @@ async def mydocs(
     )
     return response
 
+@router.get("/register")
+async def register(request: Request) -> HTMLResponse:
+    """
+    Registrar usuario
+    """
+    start_time = time.time()
+    response = templates.TemplateResponse(
+        request=request,
+        name="user/register.html",
+        context={
+            "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
+            "active_page": 'register',
+        },
+    )
+    return response
 
 
 @router.get("/document/{document_id}")

@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}Registro de nuevo usuario{% endblock %}
+{% block public_content %}
+<div class="min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-lg">
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl font-bold text-center">Crear una nueva cuenta</h2>
+            <p class="text-sm text-base-content/70 text-center mb-6">Llena la siguiente información para crear tu cuenta</p>
+            <form id="registrationForm" class="space-y-6"
+                hx-post="/api/users/register"
+                hx-on::htmx:afterRequest="handleSuccess(event)">
+                
+                <!-- Full Name -->
+                <div class="form-control w-full">
+                    <label class="label pb-2">
+                        <span class="label-text font-semibold">Nombre completo<span class="text-error">*</span></span>
+                    </label>
+                    <input
+                        type="text"
+                        name="name"
+                        placeholder="e.g., User Userson"
+                        class="input input-bordered w-full"
+                        minlength="2"
+                        maxlength="30"
+                        required
+                    />
+                    <label class="label pt-2">
+                        <span class="label-text-alt text-base-content/60">2-30 caracteres</span>
+                    </label>
+                </div>
+
+                <!-- Username -->
+                <div class="form-control w-full">
+                    <label class="label pb-2">
+                        <span class="label-text font-semibold">Usuario<span class="text-error">*</span></span>
+                    </label>
+                    <input
+                        type="text"
+                        name="username"
+                        placeholder="e.g., userson"
+                        class="input input-bordered w-full"
+                        minlength="2"
+                        maxlength="20"
+                        pattern="^[a-z0-9]+$"
+                        required
+                    />
+                    <label class="label pt-2">
+                        <span class="label-text-alt text-base-content/60">2-20 minúsculas y números</span>
+                    </label>
+                </div>
+
+                <!-- Email -->
+                <div class="form-control w-full">
+                    <label class="label pb-2">
+                        <span class="label-text font-semibold">Correo electrónico<span class="text-error">*</span></span>
+                    </label>
+                    <input
+                        type="email"
+                        name="email"
+                        placeholder="e.g., user.userson@example.com"
+                        class="input input-bordered w-full"
+                        required
+                    />
+                </div>
+
+                <!-- Password -->
+                <div class="form-control w-full">
+                    <label class="label pb-2">
+                        <span class="label-text font-semibold">Contraseña<span class="text-error">*</span></span>
+                    </label>
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Ingresa tu contraseña"
+                        class="input input-bordered w-full"
+                        minlength="8"
+                        required
+                    />
+                    <label class="label pt-2">
+                        <span class="label-text-alt text-base-content/60">Mínimo 8 caracteres: mayúsculas, minúsculas, números y caracteres especiales</span>
+                    </label>
+                </div>
+
+                <!-- Institution -->
+                <div class="form-control w-full">
+                    <label class="label pb-2">
+                        <span class="label-text font-semibold">Institución</span>
+                    </label>
+                    <input
+                        type="text"
+                        name="institution"
+                        placeholder="e.g., Prepa 3 UNAM"
+                        class="input input-bordered w-full"
+                        value="Prepa 3 UNAM"
+                    />
+                </div>
+
+                <!-- Description -->
+                <div class="form-control w-full">
+                    <label class="label pb-2">
+                        <span class="label-text font-semibold">Descripción de uso</span>
+                    </label>
+                    <textarea
+                        name="description"
+                        placeholder="Cuéntanos sobre ti..."
+                        class="textarea textarea-bordered w-full"
+                        rows="4"
+                    >Textos de estudiantes de preparatoria en la UNAM.</textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-control w-full sm-8">
+                    <button type="submit" class="btn btn-primary" hx-indicator=".loading">
+                        <span class="htmx-indicator loading loading-spinner"></span>
+Crear cuenta
+                    </button>
+                </div>
+
+                <!-- Form message -->
+                <div id="formMessage" class="alert alert-info hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span id="messageText"></span>
+                </div>
+            </form>
+            <p class="text-xs text-base-content/60 text-center mt-4">
+                ¿Ya cuentas con una cuenta? <a href="#" class="link link-primary">Entrar</a>
+            </p>
+        </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+function handleSuccess(event) {
+    const response = event.detail.xhr;
+    
+    if (response.status === 200 || response.status === 201) {
+        const messageDiv = document.getElementById('formMessage');
+        const messageText = document.getElementById('messageText');
+        messageText.textContent = '¡Cuenta creada exitosamente!';
+        messageDiv.classList.remove('hidden', 'alert-error');
+        messageDiv.className = 'alert alert-success';
+        // Reset form after delay
+        setTimeout(() => {
+            document.getElementById('registrationForm').reset();
+            messageDiv.classList.add('hidden');
+        }, 3000);
+    }
+}
+{% endblock %}
