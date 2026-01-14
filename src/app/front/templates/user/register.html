@@ -3,12 +3,18 @@
 {% block public_content %}
 <div class="min-h-screen flex items-center justify-center p-4">
   <div class="w-full max-w-lg">
+    <!-- Error Message Area -->
+    <div id="error-message" class="card bg-red-50 border-2 border-red-300 shadow-lg p-4 md:p-4 leading-relaxed mb-6" hidden>
+      <div class="text-red-800 font-semibold"></div>
+    </div>
+
+
     <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
             <h2 class="card-title text-2xl font-bold text-center">Crear una nueva cuenta</h2>
             <p class="text-sm text-base-content/70 text-center mb-6">Llena la siguiente información para crear tu cuenta</p>
             <form id="registrationForm" class="space-y-6"
-                hx-post="/api/users/register"
+                hx-post="{{url_for('register_user')}}"
                 hx-on::htmx:afterRequest="handleSuccess(event)">
                 
                 <!-- Full Name -->

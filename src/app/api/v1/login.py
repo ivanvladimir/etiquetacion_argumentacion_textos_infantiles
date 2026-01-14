@@ -1,16 +1,21 @@
 from datetime import timedelta
-from typing import Annotated
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request, Response, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from pydantic import BaseModel, Field, EmailStr, validator, ValidationError
 
 from ...core.config import settings
 from ...core.db.database import async_get_db
 from ...api.dependencies import get_current_superuser, get_current_user
 from ...core.exceptions.http_exceptions import UnauthorizedException
 from ...core.schemas import Token
+from ...schemas.user import UserCreate, UserRead, UserCreateInternal
+from ...crud.crud_users import crud_users
+from ...core.exceptions.http_exceptions import DuplicateValueException, ForbiddenException, NotFoundException, CustomException
 from ...core.security import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     TokenType,
@@ -18,6 +23,7 @@ from ...core.security import (
     create_access_token,
     create_refresh_token,
     verify_token,
+    get_password_hash,
 )
 
 router = APIRouter(tags=["login"])
@@ -70,3 +76,64 @@ async def refresh_access_token(request: Request, db: AsyncSession = Depends(asyn
 
     new_access_token = await create_access_token(data={"sub": user_data.username_or_email})
     return {"access_token": new_access_token, "token_type": "bearer"}
+
+
+@router.post("/register")
+async def register_user(
+        request: Request,
+        db: Annotated[AsyncSession, Depends(async_get_db)],
+        name: str = Form(...),
+        username: str = Form(...),
+        email: str = Form(...),
+        password: str = Form(...),
+        institution: Optional[str] = Form(None),
+        description: Optional[str] = Form(None),
+) -> dict[str, str]:
+
+    try:
+        user = UserCreate(
+            name=name,
+            username=username,
+            email=email,
+            password=password,
+            institution=institution or None,
+            description=description or None,
+        )
+        email_row = await crud_users.exists(db=db, email=user.email)
+        if email_row:
+            raise DuplicateValueException("Email is already registered")
+
+        username_row = await crud_users.exists(db=db, username=user.username)
+        if username_row:
+            raise DuplicateValueException("Username not available")
+
+        user_internal_dict = user.model_dump()
+        user_internal_dict["hashed_password"] = get_password_hash(password=user_internal_dict["password"])
+        del user_internal_dict["password"]
+
+        user_internal = UserCreateInternal(**user_internal_dict)
+        created_user = await crud_users.create(
+            db=db, 
+            object=user_internal,
+            schema_to_select=UserRead,
+            return_as_model=True
+        )
+
+        user_read = await crud_users.get(db=db, id=created_user.id, schema_to_select=UserRead)
+        if user_read is None:
+            raise NotFoundException("Created user not found")
+
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"Se enviará un correo a {user.email} para verificar la cuenta.",
+            "user": {
+                "name": user.name,
+                "username": user.username,
+                "email": user.email
+            }
+        })
+    except ValidationError as exc:
+        raise CustomException(422, f"Error en los valores propocionados: {str(exc).replace("\n","")}")
+
+    except Exception as e:
+        raise CustomException(422, f"Error al registrar el usiario: {str(e)}")

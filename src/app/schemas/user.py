@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Annotated
+import re
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, validator
 
 from ..core.schemas import PersistentDeletion, TimestampSchema, UUIDSchema
 
@@ -32,6 +33,32 @@ class UserRead(BaseModel):
 class UserCreate(UserBase):
     model_config = ConfigDict(extra="forbid")
     password: Annotated[str, Field(pattern=r"^.{8,}|[0-9]+|[A-Z]+|[a-z]+|[^a-zA-Z0-9]+$", examples=["Str1ngst!"])]
+
+    @validator('username')
+    def validate_username(cls, v):
+        if not re.match(r'^[a-z0-9]+$', v):
+            raise ValueError('Usuario debe contener solo minúsculas y números')
+        return v
+
+    @validator('password')
+    def validate_password(cls, v):
+        has_upper = any(c.isupper() for c in v)
+        has_lower = any(c.islower() for c in v)
+        has_digit = any(c.isdigit() for c in v)
+        has_special = any(not c.isalnum() for c in v)
+        
+        if not (has_upper and has_lower and has_digit and has_special):
+            raise ValueError(
+                'La contraseña debe contener mayúsculas, minúsculas, números y caracteres especiales'
+            )
+        return v
+
+    @validator('name')
+    def validate_name(cls, v):
+        if not re.match(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$', v):
+            raise ValueError('El nombre solo puede contener letras y espacios')
+        return v
+
 
 
 class UserCreateInternal(UserBase):
