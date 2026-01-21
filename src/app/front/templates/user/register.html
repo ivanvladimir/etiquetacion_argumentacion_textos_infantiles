@@ -2,20 +2,16 @@
 {% block title %}Registro de nuevo usuario{% endblock %}
 {% block public_content %}
 <div class="min-h-screen flex items-center justify-center p-4">
-  <div class="w-full max-w-lg">
+  <div class="w-full max-w-2xl">
     <!-- Error Message Area -->
     <div id="error-message" class="card bg-red-50 border-2 border-red-300 shadow-lg p-4 md:p-4 leading-relaxed mb-6" hidden>
       <div class="text-red-800 font-semibold"></div>
     </div>
-
-
     <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
-            <h2 class="card-title text-2xl font-bold text-center">Crear una nueva cuenta</h2>
+            <h2 class="card-title text-2xl font-bold text-center justify-center">Crear una nueva cuenta</h2>
             <p class="text-sm text-base-content/70 text-center mb-6">Llena la siguiente información para crear tu cuenta</p>
-            <form id="registrationForm" class="space-y-6"
-                hx-post="{{url_for('register_user')}}"
-                hx-on::htmx:afterRequest="handleSuccess(event)">
+            <form id="registrationForm" class="space-y-6">
                 
                 <!-- Full Name -->
                 <div class="form-control w-full">
@@ -25,17 +21,19 @@
                     <input
                         type="text"
                         name="name"
+                        id="name"
                         placeholder="e.g., User Userson"
                         class="input input-bordered w-full"
                         minlength="2"
                         maxlength="30"
                         required
+                        onchange="validateName(this)"
                     />
                     <label class="label pt-2">
-                        <span class="label-text-alt text-base-content/60">2-30 caracteres</span>
+                        <span class="label-text-alt text-base-content/60" id="nameHint">2-30 caracteres</span>
+                        <span id="nameError" class="label-text-alt text-error hidden"></span>
                     </label>
                 </div>
-
                 <!-- Username -->
                 <div class="form-control w-full">
                     <label class="label pb-2">
@@ -44,18 +42,20 @@
                     <input
                         type="text"
                         name="username"
+                        id="username"
                         placeholder="e.g., userson"
                         class="input input-bordered w-full"
                         minlength="2"
                         maxlength="20"
                         pattern="^[a-z0-9]+$"
                         required
+                        onchange="validateUsername(this)"
                     />
                     <label class="label pt-2">
-                        <span class="label-text-alt text-base-content/60">2-20 minúsculas y números</span>
+                        <span class="label-text-alt text-base-content/60" id="usernameHint">2-20 minúsculas y números</span>
+                        <span id="usernameError" class="label-text-alt text-error hidden"></span>
                     </label>
                 </div>
-
                 <!-- Email -->
                 <div class="form-control w-full">
                     <label class="label pb-2">
@@ -64,30 +64,49 @@
                     <input
                         type="email"
                         name="email"
+                        id="email"
                         placeholder="e.g., user.userson@example.com"
                         class="input input-bordered w-full"
                         required
+                        onchange="validateEmail(this)"
                     />
+                    <label class="label pt-2">
+                        <span class="label-text-alt text-base-content/60" id="emailHint"></span>
+                        <span id="emailError" class="label-text-alt text-error hidden"></span>
+                    </label>
                 </div>
-
                 <!-- Password -->
                 <div class="form-control w-full">
                     <label class="label pb-2">
                         <span class="label-text font-semibold">Contraseña<span class="text-error">*</span></span>
                     </label>
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Ingresa tu contraseña"
-                        class="input input-bordered w-full"
-                        minlength="8"
-                        required
-                    />
-                    <label class="label pt-2">
-                        <span class="label-text-alt text-base-content/60">Mínimo 8 caracteres: mayúsculas, minúsculas, números y caracteres especiales</span>
+                    <div class="relative">
+                        <input
+                            type="password"
+                            name="password"
+                            id="password"
+                            placeholder="Ingresa tu contraseña"
+                            class="input input-bordered w-full pr-12"
+                            minlength="8"
+                            required
+                            onchange="validatePassword(this)"
+                        />
+                        <button
+                            type="button"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/60 hover:text-base-content"
+                            onclick="togglePasswordVisibility()"
+                        >
+                            <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                    <label class="label pt-2 flex flex-col gap-1">
+                        <span class="label-text-alt text-base-content/60" id="passwordHint">Mínimo 8 caracteres: mayúsculas, minúsculas, números y caracteres especiales</span>
+                        <span id="passwordError" class="label-text-alt text-error hidden"></span>
                     </label>
                 </div>
-
                 <!-- Institution -->
                 <div class="form-control w-full">
                     <label class="label pb-2">
@@ -96,12 +115,12 @@
                     <input
                         type="text"
                         name="institution"
+                        id="institution"
                         placeholder="e.g., Prepa 3 UNAM"
                         class="input input-bordered w-full"
                         value="Prepa 3 UNAM"
                     />
                 </div>
-
                 <!-- Description -->
                 <div class="form-control w-full">
                     <label class="label pb-2">
@@ -109,20 +128,19 @@
                     </label>
                     <textarea
                         name="description"
+                        id="description"
                         placeholder="Cuéntanos sobre ti..."
                         class="textarea textarea-bordered w-full"
                         rows="4"
                     >Textos de estudiantes de preparatoria en la UNAM.</textarea>
                 </div>
-
                 <!-- Submit Button -->
-                <div class="form-control w-full sm-8">
-                    <button type="submit" class="btn btn-primary" hx-indicator=".loading">
-                        <span class="htmx-indicator loading loading-spinner"></span>
-Crear cuenta
+                <div class="form-control w-full">
+                    <button type="button" class="btn btn-primary" onclick="submitForm()">
+                        <span id="submitSpinner" class="htmx-indicator loading loading-spinner hidden"></span>
+                        Crear cuenta
                     </button>
                 </div>
-
                 <!-- Form message -->
                 <div id="formMessage" class="alert alert-info hidden">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -137,22 +155,204 @@ Crear cuenta
   </div>
 </div>
 {% endblock %}
-
 {% block script %}
-function handleSuccess(event) {
-    const response = event.detail.xhr;
+// Validation functions
+function validateName(input) {
+    const error = document.getElementById('nameError');
+    const hint = document.getElementById('nameHint');
+    const value = input.value.trim();
     
-    if (response.status === 200 || response.status === 201) {
-        const messageDiv = document.getElementById('formMessage');
-        const messageText = document.getElementById('messageText');
-        messageText.textContent = '¡Cuenta creada exitosamente!';
-        messageDiv.classList.remove('hidden', 'alert-error');
-        messageDiv.className = 'alert alert-success';
-        // Reset form after delay
-        setTimeout(() => {
-            document.getElementById('registrationForm').reset();
-            messageDiv.classList.add('hidden');
-        }, 3000);
+    if (value.length < 2) {
+        error.textContent = 'Mínimo 2 caracteres';
+        error.classList.remove('hidden');
+        hint.classList.add('hidden');
+        input.classList.add('input-error');
+        return false;
+    } else if (value.length > 30) {
+        error.textContent = 'Máximo 30 caracteres';
+        error.classList.remove('hidden');
+        hint.classList.add('hidden');
+        input.classList.add('input-error');
+        return false;
+    } else {
+        error.classList.add('hidden');
+        hint.classList.remove('hidden');
+        input.classList.remove('input-error');
+        return true;
     }
+}
+function validateUsername(input) {
+    const error = document.getElementById('usernameError');
+    const hint = document.getElementById('usernameHint');
+    const value = input.value.trim();
+    const pattern = /^[a-z0-9]+$/;
+    
+    if (value.length < 2) {
+        error.textContent = 'Mínimo 2 caracteres';
+        error.classList.remove('hidden');
+        hint.classList.add('hidden');
+        input.classList.add('input-error');
+        return false;
+    } else if (value.length > 20) {
+        error.textContent = 'Máximo 20 caracteres';
+        error.classList.remove('hidden');
+        hint.classList.add('hidden');
+        input.classList.add('input-error');
+        return false;
+    } else if (!pattern.test(value)) {
+        error.textContent = 'Solo minúsculas y números permitidos';
+        error.classList.remove('hidden');
+        hint.classList.add('hidden');
+        input.classList.add('input-error');
+        return false;
+    } else {
+        error.classList.add('hidden');
+        hint.classList.remove('hidden');
+        input.classList.remove('input-error');
+        return true;
+    }
+}
+function validateEmail(input) {
+    const error = document.getElementById('emailError');
+    const value = input.value.trim();
+    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!pattern.test(value)) {
+        error.textContent = 'Correo electrónico inválido';
+        error.classList.remove('hidden');
+        input.classList.add('input-error');
+        return false;
+    } else {
+        error.classList.add('hidden');
+        input.classList.remove('input-error');
+        return true;
+    }
+}
+function validatePassword(input) {
+    const error = document.getElementById('passwordError');
+    const hint = document.getElementById('passwordHint');
+    const value = input.value;
+    const hasUppercase = /[A-Z]/.test(value);
+    const hasLowercase = /[a-z]/.test(value);
+    const hasNumbers = /[0-9]/.test(value);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value);
+    
+    if (value.length < 8) {
+        error.textContent = 'Mínimo 8 caracteres';
+        error.classList.remove('hidden');
+        hint.classList.add('hidden');
+        input.classList.add('input-error');
+        return false;
+    } else if (!hasUppercase || !hasLowercase || !hasNumbers || !hasSpecialChar) {
+        error.textContent = 'Debe contener mayúsculas, minúsculas, números y caracteres especiales';
+        error.classList.remove('hidden');
+        hint.classList.add('hidden');
+        input.classList.add('input-error');
+        return false;
+    } else {
+        error.classList.add('hidden');
+        hint.classList.remove('hidden');
+        input.classList.remove('input-error');
+        return true;
+    }
+}
+function togglePasswordVisibility() {
+    const input = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />';
+    } else {
+        input.type = 'password';
+        eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
+    }
+}
+
+// Form submission function
+function submitForm() {
+    const form = document.getElementById('registrationForm');
+    const nameInput = document.getElementById('name');
+    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const submitSpinner = document.getElementById('submitSpinner');
+    const formMessage = document.getElementById('formMessage');
+    const messageText = document.getElementById('messageText');
+    
+    // Validate all fields
+    const isNameValid = validateName(nameInput);
+    const isUsernameValid = validateUsername(usernameInput);
+    const isEmailValid = validateEmail(emailInput);
+    const isPasswordValid = validatePassword(passwordInput);
+    
+    if (!isNameValid || !isUsernameValid || !isEmailValid || !isPasswordValid) {
+        messageText.textContent = 'Por favor, completa todos los campos correctamente.';
+        formMessage.classList.remove('hidden', 'alert-success');
+        formMessage.classList.add('alert-error');
+        return;
+    }
+    
+    // Show loading spinner
+    submitSpinner.classList.remove('hidden');
+    
+    // Prepare form data
+    const formData = new FormData(form);
+    
+    // Send request to backend
+    fetch('{{ url_for("register_user") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        submitSpinner.classList.add('hidden');
+        
+        if (response.status === 200 || response.status === 201) {
+            return response.json().then(data => handleSuccess(data));
+        } else if (response.status >= 400) {
+            return response.json().then(data => handleError(data));
+        }
+    })
+    .catch(error => {
+        submitSpinner.classList.add('hidden');
+        console.error('Error:', error);
+        messageText.textContent = 'Error de conexión. Intenta de nuevo.';
+        formMessage.classList.remove('hidden', 'alert-success');
+        formMessage.classList.add('alert-error');
+    });
+}
+
+// Success handler
+function handleSuccess(data) {
+    const messageDiv = document.getElementById('formMessage');
+    const messageText = document.getElementById('messageText');
+    
+    let successMsg = '¡Cuenta creada exitosamente!';
+    
+    if (data.message) {
+        successMsg = data.message;
+    }
+    
+    messageText.textContent = successMsg;
+    messageDiv.classList.remove('hidden', 'alert-error');
+    messageDiv.classList.add('alert-success');
+}
+
+// Error handler
+function handleError(data) {
+    const messageDiv = document.getElementById('formMessage');
+    const messageText = document.getElementById('messageText');
+    
+    let errorMsg = 'Error al crear la cuenta. Intenta de nuevo.';
+    
+    if (data.message) {
+        errorMsg = data.message;
+    } else if (data.error) {
+        errorMsg = data.error;
+    }
+    
+    messageText.textContent = errorMsg;
+    messageDiv.classList.remove('hidden', 'alert-success');
+    messageDiv.classList.add('alert-error');
 }
 {% endblock %}

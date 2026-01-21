@@ -133,7 +133,7 @@ async def register_user(
             }
         })
     except ValidationError as exc:
-        raise CustomException(422, f"Error en los valores propocionados: {str(exc).replace("\n","")}")
+        raise CustomException(422, f"Error en los valores propocionados")
 
     except Exception as e:
-        raise CustomException(422, f"Error al registrar el usiario: {str(e)}")
+        raise CustomException(422, f"Error al registrar el usiario")
