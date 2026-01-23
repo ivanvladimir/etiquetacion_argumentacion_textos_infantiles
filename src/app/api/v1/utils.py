@@ -54,7 +54,6 @@ async def api_search(
         crop_length = 20,
         filter=["type = 'original'"]
     )
-    print(result)
 
     response = templates.TemplateResponse(
         request=request,

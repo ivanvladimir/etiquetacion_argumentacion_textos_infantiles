@@ -98,6 +98,24 @@ async def register(request: Request) -> HTMLResponse:
     )
     return response
 
+@router.get("/email_verification")
+async def email_verification(
+        request: Request,
+        token: str,
+    ) -> HTMLResponse:
+    """
+    Validar usuario por correo
+    """
+    start_time = time.time()
+    response = templates.TemplateResponse(
+        request=request,
+        name="user/email_verification.html",
+        context={
+            "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
+            "active_page": 'register',
+        },
+    )
+    return response
 
 @router.get("/document/{document_id}")
 async def doc(

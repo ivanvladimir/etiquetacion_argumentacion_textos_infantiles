@@ -37,16 +37,15 @@ async def send_email_task(
     ctx: Worker,
     subject: str,
     recipients: List[str],
-    body: str,
-        subtype: MessageType) -> dict:
+    body: str) -> dict:
     """Send an email task"""
     fm = ctx["fm"]
     message = MessageSchema(
         subject=subject,
         recipients=recipients,
         body=body,
-        subtype=subtype)
-    fm.send_message(message)
+        subtype=MessageType.html)
+    await fm.send_message(message)
 
     return {"status": "success", "detail": f"Email sent to: {', '.join(recipients)}"}
 
@@ -154,7 +153,7 @@ async def startup(ctx: Worker) -> None:
             MAIL_SSL_TLS=settings.MAIL_SSL_TLS)
 
         fm = FastMail(conf)
-    ctx["fm"] = conf
+    ctx["fm"] = fm
 
 async def shutdown(ctx: Worker) -> None:
     logging.info("Worker end")

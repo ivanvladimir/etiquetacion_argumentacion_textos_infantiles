@@ -1,10 +1,13 @@
 from datetime import timedelta
 from typing import Annotated, Optional
+import jwt
 
 from fastapi import APIRouter, Depends, Request, Response, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from datetime import datetime, timedelta
 
 from pydantic import BaseModel, Field, EmailStr, validator, ValidationError
 
@@ -12,6 +15,7 @@ from ...core.config import settings
 from ...core.db.database import async_get_db
 from ...api.dependencies import get_current_superuser, get_current_user
 from ...core.exceptions.http_exceptions import UnauthorizedException
+from ...core.utils import queue
 from ...core.schemas import Token
 from ...schemas.user import UserCreate, UserRead, UserCreateInternal
 from ...crud.crud_users import crud_users
@@ -121,11 +125,35 @@ async def register_user(
 
         user_read = await crud_users.get(db=db, id=created_user.id, schema_to_select=UserRead)
         if user_read is None:
-            raise NotFoundException("Created user not found")
+            raise NotFoundException("Created user not found.")
+
+        payload = {
+            "email": user_read['email'],
+            "exp": datetime.utcnow() + timedelta(minutes=settings.VERIFICATION_TOKEN_EXPIRE_MINUTES),
+            "type": "email_verification"
+        }
+        verification_token = jwt.encode(payload, "a", algorithm=settings.ALGORITHM)
+
+        job = await queue.pool.enqueue_job(
+            "send_email_task",
+            "Correo de verificación de cuenta para AATI",
+            [user_read['email']],
+            f"""
+            <p>Su correo {user_read['email']} ha sido registrado exitosamente en AATI. Para verificar su cuenta, por favor haga clic en el siguiente enlace:</p>
+
+            <p><a href="{request.url_for("email_verification")}?token={verification_token}">Verificar mi cuenta</a></p>
+
+            <p>Si usted no se registró en AATI, por favor ignore este correo.</p>
+            """,
+        )
+
+        if not job:
+            raise CustomException(422, f"Error al enviar correo, contactar al administrador.")
+
 
         return JSONResponse(content={
             "status": "success",
-            "message": f"Se enviará un correo a {user.email} para verificar la cuenta.",
+            "message": f"Cuenta creada de forma exitosa.\nSe enviará un correo a {user.email} para verificar la cuenta.",
             "user": {
                 "name": user.name,
                 "username": user.username,
@@ -135,5 +163,6 @@ async def register_user(
     except ValidationError as exc:
         raise CustomException(422, f"Error en los valores propocionados")
 
-    except Exception as e:
-        raise CustomException(422, f"Error al registrar el usiario")
+
+
+ 
