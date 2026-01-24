@@ -168,6 +168,7 @@ async def register_user(
 @router.post("/verify_email")
 async def api_verify_email(
         request: Request,
+        db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> dict[str, str]:
 
     try:
@@ -180,6 +181,33 @@ async def api_verify_email(
 
         if email is None or token_type != "email_verification":
             raise CustomException(401, f"El token proporcionado es incorrecto.")
+
+        email_row = await crud_users.exists(db=db, email=email)
+        if not email_row:
+            raise CustomException(401, f"El token proporcionado es incorrecto.")
+
+        user_read = await crud_users.get(
+            db=db,
+            email=email,
+            schema_to_select=UserRead,
+            return_as_model=True,)
+
+        if user_read is None:
+            raise NotFoundException("Created user not found.")
+
+        if user_read.is_verified:
+            raise CustomException(422, f"Este proceso ya ha sido aplicado.")
+
+        user_updated = await crud_users.update(
+            db=db,
+            object={'is_verified': True},
+            id=user_read.id,
+            schema_to_select=UserRead,
+            return_as_model=True,
+        )
+
+        if not user_updated:
+            raise CustomException(422, f"Error al verificar el correo, contactar al administrador.")
         
         return JSONResponse(
             content={
