@@ -1,6 +1,14 @@
 {% extends 'base.html' %}
 {% block title %}Registro de nuevo usuario{% endblock %}
-{% block public_content %}
+{% block restricted_content %}
+<div class="min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-2xl">
+  <p>Salir para poder registrar una cuenta nueva.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block logout_content %}
 <div class="min-h-screen flex items-center justify-center p-4">
   <div class="w-full max-w-2xl">
     <!-- Error Message Area -->

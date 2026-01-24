@@ -98,6 +98,22 @@ async def register(request: Request) -> HTMLResponse:
     )
     return response
 
+@router.get("/forgot_password")
+async def forgot_password(request: Request) -> HTMLResponse:
+    """
+    Forma para capturar el correo del usuario que olvido su contraseña
+    """
+    start_time = time.time()
+    response = templates.TemplateResponse(
+        request=request,
+        name="user/forgot_password.html",
+        context={
+            "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
+            "active_page": 'register',
+        },
+    )
+    return response
+
 @router.get("/email_verification")
 async def email_verification(
         request: Request,
