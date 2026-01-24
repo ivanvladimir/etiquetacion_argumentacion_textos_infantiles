@@ -157,8 +157,8 @@ window.APP_CONFIG = {
             hx-trigger="click"
             hx-swap="none"
             @htmx:after-request="handleLogout($event)">
-            <span x-show="!loading">Logout</span>
-            <span x-show="loading">Logging out...</span>
+            <span x-show="!isChecking">Logout</span>
+            <span x-show="isChecking">Logging out...</span>
           </button>
         </li>
       </ul>

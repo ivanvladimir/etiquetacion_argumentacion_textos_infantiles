@@ -132,7 +132,7 @@ async def register_user(
             "exp": datetime.utcnow() + timedelta(minutes=settings.VERIFICATION_TOKEN_EXPIRE_MINUTES),
             "type": "email_verification"
         }
-        verification_token = jwt.encode(payload, "a", algorithm=settings.ALGORITHM)
+        verification_token = jwt.encode(payload, settings.SECRET_KEY.get_secret_value(), algorithm=settings.ALGORITHM)
 
         job = await queue.pool.enqueue_job(
             "send_email_task",
@@ -165,4 +165,33 @@ async def register_user(
 
 
 
- 
+@router.post("/verify_email")
+async def api_verify_email(
+        request: Request,
+) -> dict[str, str]:
+
+    try:
+        data = await request.json()
+        payload = jwt.decode(data['token'], settings.SECRET_KEY.get_secret_value(), algorithms=[settings.ALGORITHM])
+
+        email: str = payload.get("email")
+        token_type: str = payload.get("type")
+        expires_at = datetime.fromtimestamp(payload.get("exp")).isoformat()
+
+        if email is None or token_type != "email_verification":
+            raise CustomException(401, f"El token proporcionado es incorrecto.")
+        
+        return JSONResponse(
+            content={
+                "status": "success", 
+                "message": "Email verificado de forma correcta; ya podrás acceder a la plataforma.",
+                "redirect_url": f"{request.url_for('main')}"
+            })
+    
+    except jwt.ExpiredSignatureError:
+        raise CustomException(401, f"El token de verifiación ha expirado. Solicita un nuevo token.")
+    except jwt.InvalidTokenError as e:
+        raise CustomException(401, f"El token proporcionado es incorrecto.")
+
+
+

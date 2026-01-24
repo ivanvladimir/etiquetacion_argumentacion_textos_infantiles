@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Verificación de Email{% endblock %}
+{% block public_content %}
+<div class="min-h-screen flex items-center justify-center p-4" x-data="emailVerification()">
+  <div class="w-full max-w-2xl">
+    <!-- Loading State - Only show this while waiting -->
+    <div id="loading-state" x-show="loading" class="card bg-blue-50 border-2 border-blue-300 shadow-lg p-6 md:p-8 text-center">
+      <div class="flex justify-center mb-4">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+      <p class="text-blue-800 font-semibold">Verificando tu email...</p>
+    </div>
+
+    <!-- Success State - Shows response message and redirect info -->
+    <div id="success-state" x-show="success && !loading" class="card bg-green-50 border-2 border-green-300 shadow-lg p-6 md:p-8 text-center">
+      <div class="text-4xl mb-4">✓</div>
+      <p class="text-green-800 font-semibold text-lg" x-text="successMessage"></p>
+      <p class="text-green-700 text-sm mt-4">Redirigiendo...</p>
+      
+      <!-- Fallback redirect link in case auto-redirect doesn't work -->
+      <div x-show="redirectUrl" class="mt-6 p-4 bg-green-100 rounded border border-green-200">
+        <p class="text-green-700 text-sm mb-3">Si no se redirige automáticamente, haz clic aquí:</p>
+        <a :href="redirectUrl" 
+           class="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded transition">
+          Continuar
+        </a>
+      </div>
+    </div>
+
+    <!-- Error State - Shows error message -->
+    <div id="error-state" x-show="error && !loading" class="card bg-red-50 border-2 border-red-300 shadow-lg p-6 md:p-8">
+      <div class="flex items-start gap-3 mb-4">
+        <span class="text-red-600 text-2xl flex-shrink-0">⚠️</span>
+        <div class="flex-grow">
+          <div class="text-red-800 font-semibold mb-2">Error en la verificación</div>
+          <div class="text-red-700 text-sm" x-text="error"></div>
+        </div>
+      </div>
+      
+      <!-- Retry option -->
+      <div class="mt-6 flex gap-3 justify-center">
+        <button @click="verifyEmail()" 
+                class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded transition">
+          Intentar de nuevo
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+  function emailVerification() {
+    return {
+      loading: true,
+      error: '',
+      success: false,
+      successMessage: '',
+      redirectUrl: '',
+      
+      getTokenFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('token');
+      },
+      
+      async verifyEmail() {
+        const token = this.getTokenFromURL();
+        if (!token) {
+          this.error = 'Token de verificación no encontrado en la URL';
+          this.loading = false;
+          return;
+        }
+        
+        this.loading = true;
+        this.error = '';
+        this.success = false;
+        this.successMessage = '';
+        this.redirectUrl = '';
+        
+        try {
+          const response = await fetch('{{ url_for("api_verify_email") }}', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'HX-Request': 'true'
+            },
+            body: JSON.stringify({ token: token })
+          });
+          
+          const data = await response.json();
+          
+          if (!response.ok) {
+            this.error = data.message || 'Error al verificar el email. Por favor, intenta de nuevo.';
+            this.loading = false;
+            return;
+          }
+          
+          // Show success message returned from API
+          this.successMessage = data.message || '¡Email verificado correctamente!';
+          this.success = true;
+          this.loading = false;
+          
+          // Store redirect URL for fallback link
+          if (data.redirect_url) {
+            this.redirectUrl = data.redirect_url;
+            
+            // Auto-redirect after 3 seconds
+            setTimeout(() => {
+              window.location.href = data.redirect_url;
+            }, 3000);
+          }
+        } catch (err) {
+          this.error = 'Error de conexión. Por favor, intenta de nuevo más tarde.';
+          this.loading = false;
+          console.error('Verification error:', err);
+        }
+      },
+      
+      init() {
+        this.$nextTick(() => {
+          this.verifyEmail();
+        });
+      }
+    };
+  }
+{% endblock %}
