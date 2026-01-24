@@ -222,4 +222,119 @@ async def api_verify_email(
         raise CustomException(401, f"El token proporcionado es incorrecto.")
 
 
+@router.post("/request_reset_password")
+async def request_reset_password(
+        request: Request,
+        db: Annotated[AsyncSession, Depends(async_get_db)],
+        email: str = Form(...),
+) -> dict[str, str]:
+    try:
+        if not email:
+            raise DuplicateValueException("Email no fue proporcionado.")
+
+        
+        user = await crud_users.get(
+            db=db,
+            email=email,
+            schema_to_select=UserRead,
+            return_as_model=True,)
+
+        if not user:
+            raise DuplicateValueException("Email no está registrado.")
+
+        payload = {
+            "email": user.email,
+            "exp": datetime.utcnow() + timedelta(minutes=settings.VERIFICATION_TOKEN_EXPIRE_MINUTES),
+            "type": "password_reset"
+        }
+        reset_password_token = jwt.encode(payload, settings.SECRET_KEY.get_secret_value(), algorithm=settings.ALGORITHM)
+
+        job = await queue.pool.enqueue_job(
+            "send_email_task",
+            "Verificación se solicitud de cambio de contraseña para AATI",
+            [user.email],
+            f"""
+            <p>Se ha solicitado cambiar la contrasella para la cuenta associada al {user.email} en el sistema AATI. Si reconoce esta solicitud haga clic en el siguiente enlace:</p>
+
+            <p><a href="{request.url_for("reset_password")}?token={reset_password_token}">Cambiar contraseña</a></p>
+
+            <p>Si usted no hizo esta solicitud en AATI, por favor ignore este correo.</p>
+            """,
+        )
+
+        if not job:
+            raise CustomException(422, f"Error al enviar correo, contactar al administrador.")
+
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"Solicitud de cambio de contrseña fue existoa.\nSe enviará un correo a {user.email} para verificar solicitud.",
+        })
+    except ValidationError as exc:
+        raise CustomException(422, f"Error en los valores propocionados")
+
+@router.post("/reset_password")
+async def api_reset_password(
+        request: Request,
+        db: Annotated[AsyncSession, Depends(async_get_db)],
+) -> dict[str, str]:
+
+    try:
+        data = await request.json()
+
+        password= data["new_password"]
+        password_= data["confirm_password"]
+
+        if password != password_:
+            raise CustomException(401, f"Passwords no coinciden.")
+
+        payload = jwt.decode(data['token'], settings.SECRET_KEY.get_secret_value(), algorithms=[settings.ALGORITHM])
+
+        email: str = payload.get("email")
+        token_type: str = payload.get("type")
+        expires_at = datetime.fromtimestamp(payload.get("exp")).isoformat()
+
+        if email is None or token_type != "password_reset":
+            raise CustomException(401, f"El token proporcionado es incorrecto.")
+
+        email_row = await crud_users.exists(db=db, email=email)
+        if not email_row:
+            raise CustomException(401, f"El token proporcionado es incorrecto.")
+
+        user_read = await crud_users.get(
+            db=db,
+            email=email,
+            schema_to_select=UserRead,
+            return_as_model=True,)
+
+        if user_read is None:
+            raise NotFoundException("Created user not found.")
+
+        if not user_read.is_verified:
+            raise CustomException(422, f"El usuario no ha sido verificado.")
+
+        user_updated = await crud_users.update(
+            db=db,
+            object={'hashed_password': get_password_hash(password=password)},
+            id=user_read.id,
+            schema_to_select=UserRead,
+            return_as_model=True,
+        )
+
+        if not user_updated:
+            raise CustomException(422, f"Error al verificar el correo, contactar al administrador.")
+        
+        return JSONResponse(
+            content={
+                "status": "success", 
+                "message": "La constraseña ha sido actualizada.",
+                "redirect_url": f"{request.url_for('main')}"
+            })
+    
+    except jwt.ExpiredSignatureError:
+        raise CustomException(401, f"El token de verifiación ha expirado. Solicita un nuevo token.")
+    except jwt.InvalidTokenError as e:
+        raise CustomException(401, f"El token proporcionado es incorrecto.")
+
+
+
 
