@@ -17,9 +17,10 @@ async def main(request: Request) -> HTMLResponse:
     Principal
     """
     start_time = time.time()
+    content_path = "src/app/content/"
 
-    if os.path.exists(os.path.join("./src/app/resources", f"main.md")):
-        content = open(os.path.join("./src/app/resources", f"main.md")).read()
+    if os.path.exists(os.path.join(content_path, f"main.md")):
+        content = open(os.path.join(content_path, f"main.md")).read()
         md = markdown.Markdown(extensions=["meta", "tables"])
         content = md.convert(content)
         response = templates.TemplateResponse(
@@ -28,6 +29,7 @@ async def main(request: Request) -> HTMLResponse:
             context={
                 "content": content,
                 "metadata": md.Meta,
+                "scope":'public',
                 "active_page":'main',
                 "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
             },
@@ -50,12 +52,16 @@ async def page(view: str, request: Request) -> HTMLResponse:
         content = open(os.path.join(content_path, f"{view}.md")).read()
         md = markdown.Markdown(extensions=["meta", "tables"])
         content = md.convert(content)
+        print(md.Meta)
         response = templates.TemplateResponse(
             request=request,
             name="public/page.html",
             context={
                 "content": content,
                 "metadata": md.Meta,
+                "scope":'public',
+                "active_page":md.Meta.get("active_page",[None])[0],
+                "active_menu":md.Meta.get("active_menu",[None])[0],
                 "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
             },
         )

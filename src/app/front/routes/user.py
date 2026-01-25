@@ -93,6 +93,7 @@ async def register(request: Request) -> HTMLResponse:
         name="user/register.html",
         context={
             "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
+            "scope":'public',
             "active_page": 'register',
         },
     )
@@ -109,6 +110,7 @@ async def forgot_password(request: Request) -> HTMLResponse:
         name="user/forgot_password.html",
         context={
             "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
+            "scope":'public',
             "active_page": 'register',
         },
     )
@@ -125,6 +127,7 @@ async def reset_password(request: Request) -> HTMLResponse:
         name="user/reset_password.html",
         context={
             "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
+            "scope":'public',
             "active_page": 'register',
         },
     )
@@ -144,6 +147,7 @@ async def email_verification(
         name="user/email_verification.html",
         context={
             "elapsed_time_seconds": f"{time.time() - start_time:2.3f}",
+            "scope":'public',
             "active_page": 'register',
         },
     )

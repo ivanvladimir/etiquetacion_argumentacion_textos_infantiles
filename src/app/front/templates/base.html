@@ -51,17 +51,22 @@ window.APP_CONFIG = {
                 </ul>
               </details>
             </li>
-    
+            <li>
+              <details class="dropdown z-50">
+                <summary {%if active_page == 'project'%}class="menu-active"{%endif%}>Proyecto</summary>
+                <ul class="bg-base-100 rounded-t-none p-2">
+                  <li><a {%if active_menu == 'team'%}class="menu-active"{%endif%} href="{{url_for('page',view='equipo')}}">Equipo</a></li>
+                  <li><a {%if active_menu == 'texts'%}class="menu-active"{%endif%} href="{{url_for('page',view='textos')}}">Recolección de textos</a></li>
+                  <li><a {%if active_menu == 'labelling'%}class="menu-active"{%endif%} href="{{url_for('page',view='etiquetado')}}">Etiquetado de textos</a></li>
+                  <li><a {%if active_menu == 'plublications'%}class="menu-active"{%endif%} href="{{url_for('page',view='publicaciones')}}">Publicaciones</a></li>
+                  <li><a {%if active_menu == 'akn'%}class="menu-active"{%endif%} href="{{url_for('page',view='agradecimientos')}}">Agradecimientos</a></li>
+                </ul>
+              </details>
+            </li>
       </ul>
     </div>
     <div class="navbar-end">
       <div class="flex items-center gap-2">
-          <details class="dropdown z-50">
-            <summary {%if active_page == 'info'%}class="menu-active"{%endif%}>Información</summary>
-            <ul class="bg-base-100 rounded-t-none p-2">
-              <li><a {%if active_page == 'info'%}class="menu-active"{%endif%} href="/">Estadísticas</a></li>
-            </ul>
-          </details>
         <a 
           x-show="!isLoggedIn"
           class="btn btn-warning"
@@ -124,20 +129,15 @@ window.APP_CONFIG = {
             </ul>
           </details>
         </li>
-        <!-- Information Submenu -->
         <li>
-          <details>
-            <summary {% if active_page == 'info'%}class="menu-active"{% endif %}>
-              Información
-            </summary>
+          <details class="dropdown z-50">
+            <summary {%if active_page == 'project'%}class="menu-active"{%endif%}>Proyecto</summary>
             <ul class="bg-base-100 rounded-t-none p-2">
-              <li>
-                <a 
-                  {% if active_menu == 'stats'%}class="menu-active"{% endif %} 
-                  href="/">
-                  Estadísticas
-                </a>
-              </li>
+              <li><a {%if active_menu == 'team'%}class="menu-active"{%endif%} href="{{url_for('page',view='equipo')}}">Equipo</a></li>
+              <li><a {%if active_menu == 'texts'%}class="menu-active"{%endif%} href="{{url_for('page',view='textos')}}">Recolección de colecciones</a></li>
+              <li><a {%if active_menu == 'labelling'%}class="menu-active"{%endif%} href="{{url_for('page',view='etiquetado')}}">Etiquetado de textos</a></li>
+              <li><a {%if active_menu == 'plublications'%}class="menu-active"{%endif%} href="{{url_for('page',view='publicaciones')}}">Publicaciones</a></li>
+              <li><a {%if active_menu == 'akn'%}class="menu-active"{%endif%} href="{{url_for('page',view='agradecimientos')}}">Agradecimientos</a></li>
             </ul>
           </details>
         </li>
@@ -175,7 +175,7 @@ window.APP_CONFIG = {
     <p class="text-lg font-semibold text-base-content/70">Cargando...</p>
   </div>
 </div>
-{% if active_page != "register" %}
+{% if scope != "public" %}
 <!-- Login Form (shown only when not logged in and auth check is complete) -->
 <div x-show="!isLoggedIn && !isChecking" class="card bg-base-100 shadow-xl mb-8">
   <div class="card-body">
@@ -242,12 +242,16 @@ window.APP_CONFIG = {
   </div>
 </div>
 {% endif %}
+
+{%if scope=="public"%}
 <div x-show="!isChecking">
 <div class="container mx-auto px-4 py-8">
 {% block public_content %}
 {% endblock %}
 </div>
 </div>
+{%endif%}
+
 <div x-show="!isChecking && !isLoggedIn">
 <div class="container mx-auto px-4 py-8">
 {% block logout_content %}
