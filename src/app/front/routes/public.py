@@ -37,7 +37,6 @@ async def main(request: Request) -> HTMLResponse:
         raise HTTPException(status_code=404, detail="Page not found")
 
 
-
 @router.get("/page/{view}")
 async def page(view: str, request: Request) -> HTMLResponse:
     """
@@ -45,7 +44,7 @@ async def page(view: str, request: Request) -> HTMLResponse:
     """
     start_time = time.time()
 
-    content_path = "app/content/"
+    content_path = "src/app/content/"
 
     if os.path.exists(os.path.join(content_path, f"{view}.md")):
         content = open(os.path.join(content_path, f"{view}.md")).read()
