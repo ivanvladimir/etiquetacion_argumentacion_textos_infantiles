@@ -145,7 +145,7 @@ class MailSettings(BaseSettings):
 
 class HTTPSettings(BaseSettings):
     FORCE_HTTPS: bool | None = config("FORCE_HTTPS", default=None)
-    ALLOWED_HOSTS: str | None = config("ALLOWED_HOSTS", default=None)
+    ALLOWED_HOSTS: str | None = config("ALLOWED_HOSTS", cast=lambda v: [s.strip() for s in v.split(',')] if v else None, default=None)
  
 class Settings(
     AppSettings,

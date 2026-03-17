@@ -7,7 +7,7 @@ import fastapi
 import redis.asyncio as redis
 from arq import create_pool
 from arq.connections import RedisSettings
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
