@@ -232,7 +232,6 @@ def create_application(
 
     application = FastAPI(
         root_path=settings.ROOT_PATH if isinstance(settings, AppSettings) else None,
-        title=settings.APP_NAME if isinstance(settings, AppSettings) else None,
         lifespan=lifespan, **kwargs)
     application.include_router(front_router)
     application.include_router(api_router)
