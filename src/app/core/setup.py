@@ -89,7 +89,7 @@ async def set_threadpool_tokens(number_of_tokens: int = 100) -> None:
     limiter = anyio.to_thread.current_default_thread_limiter()
     limiter.total_tokens = number_of_tokens
 
-static_files = StaticFiles(directory="src/app/static")
+static_files = StaticFiles(directory="app/static")
 
 def lifespan_factory(
     settings: (
@@ -130,7 +130,7 @@ def lifespan_factory(
 
             process = tailwind.compile(
                 static_files.directory + "/output.css",
-                tailwind_stylesheet_path = "./src/app/resources/input.css"
+                tailwind_stylesheet_path = "app/resources/input.css"
             )
 
             initialization_complete.set()
@@ -230,7 +230,10 @@ def create_application(
     if lifespan is None:
         lifespan = lifespan_factory(settings, create_tables_on_start=create_tables_on_start)
 
-    application = FastAPI(lifespan=lifespan, **kwargs)
+    application = FastAPI(
+        root_path=settings.ROOT_PATH if isinstance(settings, AppSettings) else None,
+        title=settings.APP_NAME if isinstance(settings, AppSettings) else None,
+        lifespan=lifespan, **kwargs)
     application.include_router(front_router)
     application.include_router(api_router)
 
