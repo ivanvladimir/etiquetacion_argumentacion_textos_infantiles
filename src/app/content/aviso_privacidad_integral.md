@@ -75,4 +75,4 @@ Al utilizar esta aplicación, usted manifiesta haber leído y aceptado el presen
 
 ## 8. Última actualización
 
-24 de enero de 2024.
+17 de marzo de 2026.

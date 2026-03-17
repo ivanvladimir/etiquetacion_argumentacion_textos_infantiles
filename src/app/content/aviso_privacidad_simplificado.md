@@ -36,4 +36,4 @@ Usted puede ejercer sus derechos de Acceso, Rectificación, Cancelación u Oposi
 
 El presente aviso de privacidad puede sufrir modificaciones. Cualquier cambio será publicado en esta misma sección del sitio web.
 
-Fecha de última actualización: **24 de enero de 2024**.
+Fecha de última actualización: **17 de marzo de 2026**.
