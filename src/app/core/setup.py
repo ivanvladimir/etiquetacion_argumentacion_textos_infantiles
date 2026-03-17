@@ -230,8 +230,9 @@ def create_application(
     if lifespan is None:
         lifespan = lifespan_factory(settings, create_tables_on_start=create_tables_on_start)
 
+
     application = FastAPI(
-        root_path=settings.ROOT_PATH if isinstance(settings, AppSettings) else None,
+        root_path=settings.ROOT_PATH,
         lifespan=lifespan, **kwargs)
     application.include_router(front_router)
     application.include_router(api_router)
