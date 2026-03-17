@@ -12,24 +12,25 @@ Ivan Vladimir Meza Ruiz en su calidad de operador de la aplicación web "Anális
 
 Para la operación y funcionamiento del sitio, se recaban únicamente los siguientes datos personales:
 
-- Nombre de usuario
-- Institución asociada al usuario
-- Correo electrónico del usuario
+- Nombre de usuario.
+- Institución asociada al usuario.
+- Correo electrónico del usuario.
 
 No se solicitan datos personales sensibles.
 
 Los datos personales recabados serán utilizados exclusivamente para:
 
-- Permitir el acceso y uso de las funcionalidades de la aplicación web  
-- Identificar a los usuarios dentro del sistema  
-- Facilitar la comunicación relacionada con la operación del sitio  
+- Permitir el acceso y uso de las funcionalidades de la aplicación web.
+- Identificar a los usuarios dentro del sistema.
+- Facilitar la comunicación relacionada con la operación del sitio.
 
 Sus datos no serán utilizados para fines distintos a los aquí señalados.
 
+Los datos personales serán conservados durante el tiempo necesario para cumplir con las finalidades para las que fueron recabados y conforme a los plazos establecidos en la normatividad aplicable en materia de archivos de la UNAM. Una vez concluido dicho periodo, los datos serán suprimidos o, en su caso, integrados a los archivos históricos conforme a la normativa institucional.
+
 ## 3. Fundamento para el tratamiento de datos personales
 
-Los artículos 6º, Base A, fracciones II y III, y 16, segundo párrafo, de la Constitución Política de los Estados Unidos Mexicanos; el 3º, fracción XXXIII, 16, 17, 18, 20, 21, 22, 23, 26, 27 y 28 de la Ley General de Protección de Datos Personales en Posesión de Sujetos Obligados, así como los numerales del 5 al 19 de los Lineamientos para la Protección de Datos Personales en Posesión de la Universidad Nacional
-Autónoma de México, publicados en la Gaceta UNAM el 25 de febrero de 2019.
+Los artículos 6 y 16 de la Constitución Política de los Estados Unidos Mexicanos; el 3, 16, 17, 18, 20, 21, 22, 23, 26, 27 y 28 de la Ley General de Protección de Datos Personales en Posesión de Sujetos Obligados, así como los numerales del 5 al 19 de los Lineamientos para la Protección de Datos Personales en Posesión de la Universidad Nacional Autónoma de México, publicados en la Gaceta UNAM el 25 de febrero de 2019.
 
 ## 4. Cookies
 

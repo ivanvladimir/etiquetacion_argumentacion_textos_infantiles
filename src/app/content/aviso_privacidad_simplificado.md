@@ -14,6 +14,8 @@ Los datos personales que se recaban a través del sitio son:
 
 No se recaban datos personales sensibles.
 
+Los datos personales serán conservados durante el tiempo necesario para cumplir con las finalidades. Una vez concluido dicho periodo, los datos serán suprimidos o, en su caso, integrados a los archivos históricos.
+
 ## Finalidad del tratamiento
 
 Los datos personales serán utilizados exclusivamente para:
