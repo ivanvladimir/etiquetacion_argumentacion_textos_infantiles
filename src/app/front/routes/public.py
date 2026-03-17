@@ -52,7 +52,6 @@ async def page(view: str, request: Request) -> HTMLResponse:
         content = open(os.path.join(content_path, f"{view}.md")).read()
         md = markdown.Markdown(extensions=["meta", "tables"])
         content = md.convert(content)
-        print(md.Meta)
         response = templates.TemplateResponse(
             request=request,
             name="public/page.html",

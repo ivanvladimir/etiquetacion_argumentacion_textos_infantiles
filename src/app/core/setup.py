@@ -234,6 +234,21 @@ def create_application(
     application = FastAPI(
         root_path=settings.ROOT_PATH,
         lifespan=lifespan, **kwargs)
+
+    if settings.ALLOWED_HOSTS:
+        application.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.ALLOWED_HOSTS)
+
+    if settings.FORCE_HTTPS:
+        @application.middleware("http")
+        async def force_https_urls(request: Request, call_next):
+            # Check for forwarded proto header
+            forwarded_proto = request.headers.get("x-forwarded-proto")
+            if forwarded_proto == "https":
+                request.scope["scheme"] = "https"
+
+            response = await call_next(request)
+            return response
+
     application.include_router(front_router)
     application.include_router(api_router)
 

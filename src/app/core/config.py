@@ -143,6 +143,10 @@ class MailSettings(BaseSettings):
     MAIL_SSL_TLS: bool = config("MAIL_SSL_TLS", default=False)
     MAIL_PORT: int = config("MAIL_PORT", default=587)
 
+class HTTPSettings(BaseSettings):
+    FORCE_HTTPS: bool | None = config("FORCE_HTTPS", default=None)
+    ALLOWED_HOSTS: str | None = config("ALLOWED_HOSTS", default=None)
+ 
 class Settings(
     AppSettings,
     SQLiteSettings,
@@ -160,7 +164,8 @@ class Settings(
     CORSSettings,
     MLModelsSettings,
     FileSettings,
-    MailSettings
+    MailSettings,
+    HTTPSettings
 ):
     pass
 
