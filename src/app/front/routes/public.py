@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-templates = Jinja2Templates(directory="src/app/front/templates")
+templates = Jinja2Templates(directory="app/front/templates")
 
 router = APIRouter()
 
@@ -17,7 +17,7 @@ async def main(request: Request) -> HTMLResponse:
     Principal
     """
     start_time = time.time()
-    content_path = "src/app/content/"
+    content_path = "app/content/"
 
     if os.path.exists(os.path.join(content_path, f"main.md")):
         content = open(os.path.join(content_path, f"main.md")).read()
@@ -46,7 +46,7 @@ async def page(view: str, request: Request) -> HTMLResponse:
     """
     start_time = time.time()
 
-    content_path = "src/app/content/"
+    content_path = "app/content/"
 
     if os.path.exists(os.path.join(content_path, f"{view}.md")):
         content = open(os.path.join(content_path, f"{view}.md")).read()

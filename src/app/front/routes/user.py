@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from typing import Optional
 
-templates = Jinja2Templates(directory="src/app/front/templates")
+templates = Jinja2Templates(directory="app/front/templates")
 
 router = APIRouter()
 

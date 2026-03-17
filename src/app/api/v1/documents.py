@@ -23,7 +23,7 @@ from ...schemas.task import TaskCreate, TaskCreateInternal, TaskRead, TaskStatus
 from ...core.utils.template_filters import naturaltime
 
 
-templates = Jinja2Templates(directory="src/app/api/v1/templates")
+templates = Jinja2Templates(directory="app/api/v1/templates")
 templates.env.filters["naturaltime"] = naturaltime
 
 router = APIRouter(tags=["documents"])

@@ -27,7 +27,7 @@ from ...core.utils.template_filters import naturaltime
 
 import io
 
-templates = Jinja2Templates(directory="src/app/api/v1/templates")
+templates = Jinja2Templates(directory="app/api/v1/templates")
 templates.env.filters["naturaltime"] = naturaltime
 
 router = APIRouter(tags=["utils"])
