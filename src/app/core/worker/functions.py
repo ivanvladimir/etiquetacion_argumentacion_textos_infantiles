@@ -63,7 +63,7 @@ async def predict_task(
    
     try:
         logger.info("Worker starting connection to docsearch")
-        docsearch = AsyncClient(f"http://meilisearch:{settings.MEILI_PORT}", settings.MEILI_MASTER_KEY )
+        docsearch = AsyncClient(f"{settings.MEILI_HOST}:{settings.MEILI_PORT}", settings.MEILI_MASTER_KEY )
         logger.info("Worker starting connection to db")
         async_engine = create_async_engine(DATABASE_URL, echo=False, future=True)
         db_session = async_sessionmaker(bind=async_engine, class_=AsyncSession, expire_on_commit=False)

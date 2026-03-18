@@ -108,7 +108,7 @@ async def add_documents_(filename:str, collection_name:str, index: str):
             'created_at': datetime.now().isoformat()
         })
 
-    async with AsyncClient('http://localhost:7700', os.getenv("MEILI_MASTER_KEY")) as client:
+    async with AsyncClient(f'{os.getenv("MEILI_HOST")}:{os.getenv("MEILI_PORT")}', os.getenv("MEILI_MASTER_KEY")) as client:
         index = client.index(index)
         await index.update_documents(documents, primary_key = "id")
 
@@ -141,7 +141,7 @@ async def add_filter_(filter:str, index: str):
     None"""
     load_dotenv()
 
-    async with AsyncClient('http://localhost:7700', os.getenv("MEILI_MASTER_KEY")) as client:
+    async with AsyncClient(f'{os.getenv("MEILI_HOST")}:{os.getenv("MEILI_PORT")}', os.getenv("MEILI_MASTER_KEY")) as client:
         index = client.index(index)
         results=await index.get_filterable_attributes()
         if results:
@@ -177,7 +177,7 @@ async def add_sortable_(sortable:str, index_name: str = "documents"):
     None"""
     load_dotenv()
 
-    async with AsyncClient('http://localhost:7700', os.getenv("MEILI_MASTER_KEY")) as client:
+    async with AsyncClient(f'{os.getenv("MEILI_HOST")}:{os.getenv("MEILI_PORT")}', os.getenv("MEILI_MASTER_KEY")) as client:
         index = client.index(index_name)
         results=await index.get_sortable_attributes()
         await index.update_sortable_attributes(results+sortable.split(","))
@@ -210,7 +210,7 @@ async def show_info_(index:str):
     None"""
     load_dotenv()
 
-    async with AsyncClient('http://localhost:7700', os.getenv("MEILI_MASTER_KEY")) as client:
+    async with AsyncClient(f'{os.getenv("MEILI_HOST")}:{os.getenv("MEILI_PORT")}', os.getenv("MEILI_MASTER_KEY")) as client:
         index = client.index(index)
         results=await index.get_filterable_attributes()
         print(f"Attibutos filterable: {", ".join(results)}")
@@ -243,7 +243,7 @@ async def delete_all_(index_name: str):
     None"""
     load_dotenv()
 
-    async with AsyncClient('http://localhost:7700', os.getenv("MEILI_MASTER_KEY")) as client:
+    async with AsyncClient(f'{os.getenv("MEILI_HOST")}:{os.getenv("MEILI_PORT")}', os.getenv("MEILI_MASTER_KEY")) as client:
         index = client.index(index_name)
         task =  await index.delete_all_documents()
 
